@@ -281,16 +281,22 @@
     ];
 
     /* ------------------------------------------------------------- etat */
-    var x = 60, dir = 1, tx = null;
+    var x = 24, dir = 1, tx = null;
     var mode = 'wait', act = null, frame = 0, tFrame = 0;
     var timer = 1800, talkUntil = 0, last = 0;
     var SPEED = 30;
 
-    function maxX() { return Math.max(16, window.innerWidth - CW * 3 - 16); }
+    // largeur reelle de l'element : il est deux fois plus petit sur telephone
+    function maxX() {
+      var w = el.offsetWidth || CW * 3;
+      return Math.max(12, window.innerWidth - w - 12);
+    }
 
     function say(text, ms) {
       bubble.textContent = text;
-      bubble.classList.toggle('right', x > window.innerWidth * 0.58);
+      var rel = (x + el.offsetWidth / 2) / window.innerWidth;
+      bubble.classList.toggle('right', rel > 0.58);
+      bubble.classList.toggle('left', rel < 0.34);
       el.classList.add('talk');
       talkUntil = performance.now() + (ms || 4600);
     }

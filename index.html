@@ -452,9 +452,18 @@ html.intro-lock,html.intro-lock body{overflow:hidden;height:100%}
   opacity:0;pointer-events:none;transition:opacity .25s var(--ease),transform .25s var(--ease);
 }
 .buddy.talk .buddy__bubble{opacity:1;transform:translateX(-50%) translateY(-12px)}
+/* la bulle s'ancre à gauche ou à droite quand il approche d'un bord */
 .buddy__bubble.right{left:auto;right:-8px;transform:translateX(0) translateY(-6px)}
 .buddy.talk .buddy__bubble.right{transform:translateX(0) translateY(-12px)}
-@media (max-width:560px){.buddy{display:none}}
+.buddy__bubble.left{left:-8px;transform:translateX(0) translateY(-6px)}
+.buddy.talk .buddy__bubble.left{transform:translateX(0) translateY(-12px)}
+/* sur téléphone il reste, mais deux fois plus petit */
+@media (max-width:560px){
+  .buddy{width:80px;height:48px;bottom:10px}
+  .buddy__c{width:80px;height:48px}
+  .buddy__bubble{max-width:76vw;padding:9px 10px;font-size:7px;margin-bottom:20px}
+  .buddy__ping{font-size:9px;padding:5px 7px}
+}
 @media (max-width:640px){
   .intro__box{bottom:20px;padding:14px 16px}
   .intro__box p{font-size:9px;line-height:1.8}
