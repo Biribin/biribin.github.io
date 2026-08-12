@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linéo Biribin — Ingénieur automatisation &amp; agents IA</title>
+<meta name="description" content="Automatisation et IA appliquée, en low-code. Une centaine de workflows n8n en production : paie, DSN, DPAE, facturation, contrats, conformité. 51 workflows open source, 14 serveurs MCP.">
+<meta name="author" content="Linéo Biribin">
+<meta property="og:title" content="Linéo Biribin — Ingénieur automatisation &amp; agents IA">
+<meta property="og:description" content="Je remplace chaque processus manuel par un flux auditable. n8n auto-hébergé, MCP, agents IA.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#050505">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@300;400&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN SYSTEM
+   ============================================================ */
+:root{
+  --bg:#050505;
+  --bg-2:#0a0a0a;
+  --fg:#ffffff;
+  --muted:#9CA3AF;
+  --dim:#4B5563;
+  --blue:#3B82F6;
+  --blue-cta:#2563EB;
+  --purple:#9333EA;
+  --green:#22C55E;
+  --pink:#EC4899;
+
+  --glass:rgba(255,255,255,.05);
+  --glass-line:rgba(255,255,255,.10);
+  --glass-line-hi:rgba(255,255,255,.22);
+
+  --ease:cubic-bezier(.4,0,.2,1);
+  --gut:64px;              /* premium gutter — never 12px */
+  --gut-s:32px;
+
+  --f-head:'Space Grotesk','Segoe UI',system-ui,sans-serif;
+  --f-body:'Inter','Segoe UI',system-ui,sans-serif;
+  --f-pixel:'Press Start 2P','Courier New',monospace;
+  --f-mono:ui-monospace,SFMono-Regular,'Cascadia Mono','Courier New',monospace;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--fg);
+  font-family:var(--f-body);font-weight:300;font-size:16px;line-height:1.65;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+ul{margin:0;padding:0;list-style:none}
+h1,h2,h3,h4{font-family:var(--f-head);font-weight:700;letter-spacing:-.03em;margin:0}
+p{margin:0}
+::selection{background:var(--purple);color:#fff}
+:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:4px}
+
+/* CRT scanlines ------------------------------------------------ */
+.scanlines{
+  position:fixed;inset:0;z-index:90;pointer-events:none;
+  background:repeating-linear-gradient(
+    to bottom,
+    rgba(0,0,0,.5) 0px, rgba(0,0,0,.5) 2px,
+    rgba(255,255,255,0) 2px, rgba(255,255,255,0) 4px
+  );
+  opacity:.28;mix-blend-mode:multiply;
+}
+.vignette{
+  position:fixed;inset:0;z-index:89;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 0%,transparent 40%,rgba(0,0,0,.75) 100%);
+}
+
+/* Iris wipe (page transition) ---------------------------------- */
+.iris{
+  position:fixed;inset:0;z-index:100;background:var(--bg);
+  clip-path:circle(150% at 50% 50%);
+  transition:clip-path .9s var(--ease);
+  display:grid;place-items:center;
+}
+.iris.open{clip-path:circle(0% at 50% 50%)}
+.iris[data-done]{display:none}
+.iris__mark{
+  font-family:var(--f-pixel);font-size:11px;color:var(--green);
+  letter-spacing:.08em;opacity:.9;animation:blink 1.1s steps(2) infinite;
+}
+@keyframes blink{50%{opacity:.15}}
+
+/* Layout ------------------------------------------------------- */
+.wrap{max-width:1280px;margin:0 auto;padding:0 var(--gut)}
+section{position:relative}
+.sec{padding:calc(var(--gut) * 2.2) 0}
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--gut-s);margin-bottom:var(--gut)}
+.eyebrow{
+  font-family:var(--f-pixel);font-size:10px;line-height:1.8;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;
+  display:inline-flex;align-items:center;gap:12px;
+}
+.eyebrow::before{content:"";width:8px;height:8px;background:currentColor;flex:none}
+.sec-title{font-size:clamp(2rem,4.2vw,3.25rem);line-height:1.02}
+.sec-note{font-size:14px;color:var(--muted);max-width:34ch}
+.grad{background:linear-gradient(100deg,var(--blue),var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* Glow blobs --------------------------------------------------- */
+.glow{position:absolute;border-radius:999px;filter:blur(120px);pointer-events:none;z-index:0}
+.glow--blue{background:rgba(59,130,246,.22)}
+.glow--purple{background:rgba(147,51,234,.20)}
+.glow--green{background:rgba(34,197,94,.14)}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+.nav{
+  position:fixed;top:0;left:0;right:0;height:80px;z-index:80;
+  background:rgba(5,5,5,.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid transparent;transition:border-color .4s var(--ease),background .4s var(--ease);
+}
+.nav.is-stuck{border-bottom-color:var(--glass-line)}
+.nav__in{max-width:1280px;margin:0 auto;padding:0 var(--gut);height:100%;display:flex;align-items:center;gap:var(--gut-s)}
+.logo{font-family:var(--f-head);font-weight:700;font-size:16px;letter-spacing:-.02em;display:inline-flex;align-items:center;gap:9px;white-space:nowrap}
+.logo__dot{width:9px;height:9px;border-radius:999px;background:var(--green);box-shadow:0 0 14px var(--green)}
+.nav__links{margin-left:auto;display:flex;align-items:center;gap:36px}
+.nav__links a{font-size:14px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);transition:color .3s var(--ease)}
+.nav__links a:hover{color:var(--fg)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  font-family:var(--f-head);font-weight:700;font-size:14px;letter-spacing:-.01em;
+  border-radius:999px;padding:13px 26px;border:1px solid transparent;cursor:pointer;
+  transition:transform .35s var(--ease),background .35s var(--ease),border-color .35s var(--ease),color .35s var(--ease),box-shadow .35s var(--ease);
+  white-space:nowrap;
+}
+.btn--solid{background:#fff;color:#050505}
+.btn--solid:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(255,255,255,.18)}
+.btn--ghost{border-color:rgba(255,255,255,.2);color:#fff}
+.btn--ghost:hover{border-color:#fff;background:rgba(255,255,255,.06);transform:translateY(-2px)}
+.btn--cta{background:var(--blue-cta);color:#fff;box-shadow:0 18px 60px rgba(30,58,138,.5)}
+.btn--cta:hover{transform:translateY(-3px);box-shadow:0 26px 80px rgba(30,58,138,.7)}
+.btn--lg{font-size:17px;padding:22px 44px}
+.nav__cta{margin-left:8px}
+.nav__burger{
+  display:none;margin-left:auto;width:44px;height:44px;border-radius:12px;
+  background:var(--glass);border:1px solid var(--glass-line);color:#fff;cursor:pointer;
+}
+.nav__burger span{display:block;width:18px;height:1.5px;background:#fff;margin:4px auto;transition:transform .3s var(--ease),opacity .3s var(--ease)}
+.nav.is-open .nav__burger span:nth-child(1){transform:translateY(5.5px) rotate(45deg)}
+.nav.is-open .nav__burger span:nth-child(2){opacity:0}
+.nav.is-open .nav__burger span:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero{min-height:100vh;display:grid;place-items:center;text-align:center;padding:140px 0 var(--gut);overflow:hidden}
+.hero .glow--blue{width:560px;height:560px;top:-140px;left:-120px}
+.hero .glow--purple{width:620px;height:620px;bottom:-220px;right:-140px}
+.hero__in{position:relative;z-index:1;width:100%}
+.tag{
+  display:inline-flex;align-items:center;gap:12px;
+  font-family:var(--f-pixel);font-size:9px;line-height:1;letter-spacing:.04em;
+  padding:12px 18px;border-radius:999px;
+  background:var(--glass);border:1px solid var(--glass-line);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#e5e7eb;
+}
+.tag__dot{width:8px;height:8px;border-radius:999px;background:var(--green);box-shadow:0 0 12px var(--green);animation:pulse 2s var(--ease) infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.75)}}
+.hero h1{
+  font-size:clamp(2.75rem,8.4vw,6rem);line-height:.95;letter-spacing:-.045em;
+  margin:36px auto 0;max-width:16ch;
+}
+.hero__sub{max-width:640px;margin:32px auto 0;color:var(--muted);font-size:clamp(1rem,1.3vw,1.125rem)}
+.hero__btns{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:44px}
+.hero__meta{margin-top:32px;font-family:var(--f-mono);font-size:12px;color:var(--dim);letter-spacing:.04em}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gut-s);margin-top:calc(var(--gut) * 1.4);text-align:left}
+.stat{padding:26px 28px;border-radius:16px;background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:border-color .4s var(--ease),transform .4s var(--ease)}
+.stat:hover{border-color:var(--glass-line-hi);transform:translateY(-4px)}
+.stat__n{font-family:var(--f-head);font-weight:700;font-size:clamp(1.75rem,3vw,2.5rem);line-height:1;letter-spacing:-.04em}
+.stat__l{margin-top:12px;font-size:13px;color:var(--muted);line-height:1.5}
+.stat:nth-child(1) .stat__n{color:var(--blue)}
+.stat:nth-child(2) .stat__n{color:var(--green)}
+.stat:nth-child(3) .stat__n{color:var(--purple)}
+.stat:nth-child(4) .stat__n{color:var(--pink)}
+
+/* ============================================================
+   MARQUEE
+   ============================================================ */
+.marquee{
+  background:var(--bg-2);border-top:1px solid var(--glass-line);border-bottom:1px solid var(--glass-line);
+  overflow:hidden;display:flex;align-items:center;height:clamp(80px,11vw,120px);
+}
+.marquee__track{display:flex;white-space:nowrap;animation:marquee 20s linear infinite;will-change:transform}
+.marquee__track>span{
+  font-family:var(--f-head);font-weight:700;font-size:clamp(2.25rem,5vw,3.75rem);
+  letter-spacing:-.03em;padding-right:.4em;
+  background:linear-gradient(90deg,#1f2937,#4b5563);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+.marquee:hover .marquee__track{animation-play-state:paused}
+
+/* ============================================================
+   PROJECT GRID
+   ============================================================ */
+.grid-proj{display:grid;grid-template-columns:1fr 1fr;gap:var(--gut)}
+.grid-proj>*:nth-child(even){margin-top:var(--gut)}
+.card{display:block;position:relative;isolation:isolate}
+.card__media{
+  position:relative;aspect-ratio:4/3;border-radius:16px;overflow:hidden;
+  border:1px solid var(--glass-line);background:#0b0b0f;
+}
+.card__art{
+  position:absolute;inset:0;transition:transform .7s var(--ease);
+  background-size:cover;background-position:center;
+}
+.card:hover .card__art{transform:scale(1.05)}
+.card__art::after{ /* mix-blend colour depth */
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(150deg,rgba(59,130,246,.55),rgba(5,5,5,.9) 70%);
+  mix-blend-mode:hard-light;
+}
+.card--p .card__art::after{background:linear-gradient(150deg,rgba(147,51,234,.55),rgba(5,5,5,.9) 70%)}
+.card--g .card__art::after{background:linear-gradient(150deg,rgba(34,197,94,.5),rgba(5,5,5,.9) 70%)}
+.card--k .card__art::after{background:linear-gradient(150deg,rgba(236,72,153,.5),rgba(5,5,5,.9) 70%)}
+.card__glyph{
+  position:absolute;inset:0;display:grid;place-items:center;z-index:1;
+  font-family:var(--f-head);font-weight:700;font-size:clamp(3rem,7vw,5.5rem);
+  letter-spacing:-.06em;color:rgba(255,255,255,.1);
+}
+.card__idx{
+  position:absolute;top:20px;left:22px;z-index:2;
+  font-family:var(--f-pixel);font-size:10px;color:rgba(255,255,255,.55);
+}
+.card__flag{
+  position:absolute;top:18px;right:20px;z-index:2;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;
+  padding:6px 12px;border-radius:999px;
+  background:rgba(5,5,5,.6);border:1px solid var(--glass-line);color:#d1d5db;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+.card__over{
+  position:absolute;inset:0;z-index:3;display:grid;place-items:center;gap:18px;align-content:center;
+  background:rgba(0,0,0,.6);opacity:0;transition:opacity .5s var(--ease);
+}
+.card:hover .card__over,.card:focus-visible .card__over{opacity:1}
+.card__circle{
+  width:64px;height:64px;border-radius:999px;background:#fff;color:#050505;
+  display:grid;place-items:center;transform:translateY(10px);transition:transform .5s var(--ease);
+}
+.card:hover .card__circle{transform:translateY(0)}
+.card__over span{font-family:var(--f-pixel);font-size:9px;color:#fff;letter-spacing:.05em}
+.card__body{padding:28px 4px 0}
+.card__title{font-size:clamp(1.25rem,1.9vw,1.5rem);line-height:1.2}
+.card__desc{margin-top:12px;color:var(--muted);font-size:15px;max-width:46ch}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.tags li{
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;color:#d1d5db;
+  padding:6px 12px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-line);
+}
+
+/* ============================================================
+   EXPERIENCE
+   ============================================================ */
+.xp{display:grid;gap:var(--gut-s)}
+.xp__item{
+  padding:40px;border-radius:16px;background:var(--glass);border:1px solid var(--glass-line);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  transition:border-color .4s var(--ease),transform .4s var(--ease);
+}
+.xp__item:hover{border-color:var(--glass-line-hi);transform:translateY(-3px)}
+.xp__top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:16px}
+.xp__role{font-size:clamp(1.15rem,2.1vw,1.6rem);line-height:1.2}
+.xp__org{margin-top:8px;font-size:15px;color:var(--muted)}
+.xp__when{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;color:var(--dim);white-space:nowrap}
+.xp__list{margin-top:26px;display:grid;gap:14px}
+.xp__list li{position:relative;padding-left:26px;font-size:15px;color:#d1d5db}
+.xp__list li::before{
+  content:"";position:absolute;left:0;top:9px;width:9px;height:9px;
+  background:var(--blue);
+}
+.xp__item--alt .xp__list li::before{background:var(--purple)}
+.xp__item--alt2 .xp__list li::before{background:var(--green)}
+.xp__grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--gut-s)}
+
+/* ============================================================
+   ABOUT + SERVICES
+   ============================================================ */
+.about{display:grid;grid-template-columns:1fr 2fr;gap:var(--gut);align-items:start}
+.portrait{
+  aspect-ratio:1/1;border-radius:16px;overflow:hidden;position:relative;
+  border:1px solid var(--glass-line);
+  background:
+    radial-gradient(120% 120% at 20% 10%,#2b2b2b,#0a0a0a 70%);
+  filter:grayscale(1);transition:filter .6s var(--ease)
+}
+.portrait:hover{filter:grayscale(.35)}
+.portrait__img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.portrait__fallback{
+  position:absolute;inset:0;display:grid;place-items:center;
+  font-family:var(--f-head);font-weight:700;font-size:clamp(3rem,6vw,5rem);
+  letter-spacing:-.06em;color:rgba(255,255,255,.14);
+  background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+.about__lead{font-size:20px;font-weight:300;line-height:1.55;color:#e5e7eb}
+.about__lead strong{font-weight:400;color:#fff}
+.about__p{margin-top:24px;color:var(--muted);font-size:16px;max-width:62ch}
+.svc{display:grid;grid-template-columns:1fr 1fr;gap:var(--gut-s);margin-top:var(--gut)}
+.svc__card{
+  padding:32px;border-radius:16px;background:var(--glass);border:1px solid var(--glass-line);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  transition:border-color .4s var(--ease),transform .4s var(--ease);
+}
+.svc__card:hover{border-color:var(--glass-line-hi);transform:translateY(-4px)}
+.svc__ico{width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--glass-line)}
+.svc__card h3{margin-top:22px;font-size:1.15rem}
+.svc__card p{margin-top:12px;font-size:14px;color:var(--muted)}
+.i-blue{color:var(--blue)}.i-purple{color:var(--purple)}.i-green{color:var(--green)}.i-pink{color:var(--pink)}
+
+/* Skills columns */
+.skills{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gut-s)}
+.skills__col h4{font-size:14px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:500}
+.skills__col .tags{margin-top:20px}
+.langs{display:flex;flex-wrap:wrap;gap:var(--gut-s);margin-top:var(--gut);font-size:15px;color:var(--muted)}
+.langs b{font-family:var(--f-head);color:#fff;font-weight:700}
+
+/* ============================================================
+   CONTACT + FOOTER
+   ============================================================ */
+.contact{text-align:center;padding:calc(var(--gut) * 2.4) 0;overflow:hidden}
+.contact .glow--purple{width:640px;height:640px;left:50%;transform:translateX(-50%);bottom:-320px}
+.contact .glow--green{width:360px;height:360px;top:-60px;left:8%}
+.contact__in{position:relative;z-index:1}
+.contact h2{font-size:clamp(2.5rem,7.5vw,4.5rem);line-height:.98;letter-spacing:-.045em;max-width:20ch;margin:24px auto 0}
+.contact__p{max-width:640px;margin:28px auto 0;color:var(--muted)}
+.contact__btns{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;margin-top:48px}
+.contact__links{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;margin-top:44px;font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.contact__links a{border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:3px;transition:color .3s var(--ease),border-color .3s var(--ease)}
+.contact__links a:hover{color:#fff;border-color:#fff}
+.footer{border-top:1px solid var(--glass-line)}
+.footer__in{
+  max-width:1280px;margin:0 auto;padding:0 var(--gut);min-height:32px;
+  display:flex;align-items:center;justify-content:space-between;gap:var(--gut-s);
+  font-family:var(--f-mono);font-size:12px;color:var(--dim);
+  padding-top:28px;padding-bottom:28px;
+}
+
+/* ============================================================
+   REVEAL ANIMATION
+   ============================================================ */
+.rv{opacity:0;transform:translateY(28px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
+.rv.in{opacity:1;transform:none}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:1080px){
+  :root{--gut:40px;--gut-s:24px}
+  .stats{grid-template-columns:1fr 1fr}
+  .about{grid-template-columns:1fr;gap:var(--gut-s)}
+  .portrait{max-width:320px}
+  .skills{grid-template-columns:1fr}
+}
+@media (max-width:860px){
+  .nav__links{
+    position:fixed;top:80px;left:0;right:0;flex-direction:column;align-items:flex-start;gap:0;
+    background:rgba(5,5,5,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--glass-line);
+    max-height:0;overflow:hidden;transition:max-height .45s var(--ease);margin:0;
+  }
+  .nav.is-open .nav__links{max-height:60vh}
+  .nav__links a{padding:20px 40px;width:100%}
+  .nav__cta{display:none}
+  .nav__burger{display:block}
+  .grid-proj{grid-template-columns:1fr;gap:var(--gut-s)}
+  .grid-proj>*:nth-child(even){margin-top:0}
+  .svc,.xp__grid2{grid-template-columns:1fr}
+  .xp__item{padding:28px}
+  .footer__in{flex-direction:column;align-items:flex-start;gap:10px}
+}
+@media (max-width:520px){
+  .stats{grid-template-columns:1fr}
+  .hero__btns .btn,.contact__btns .btn{width:100%}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .marquee__track{animation:none}
+  .tag__dot,.iris__mark{animation:none}
+  .rv{opacity:1;transform:none;transition:none}
+  .iris{transition:none}
+  *{transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+
+<!-- Iris wipe transition -->
+<div class="iris" id="iris" aria-hidden="true"><span class="iris__mark">LB / LOADING</span></div>
+<div class="scanlines" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<!-- ============================ NAV ============================ -->
+<header class="nav" id="nav">
+  <div class="nav__in">
+    <a class="logo" href="#top" aria-label="Linéo Biribin — accueil">
+      <span class="logo__dot" aria-hidden="true"></span>Linéo&nbsp;Biribin
+    </a>
+    <button class="nav__burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="navlinks">
+      <span></span><span></span><span></span>
+    </button>
+    <nav class="nav__links" id="navlinks" aria-label="Navigation principale">
+      <a href="#projets">Projets</a>
+      <a href="#parcours">Parcours</a>
+      <a href="#profil">Profil</a>
+      <a href="#competences">Compétences</a>
+      <a class="btn btn--solid nav__cta" href="#contact">Me contacter</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ============================ HERO ============================ -->
+<section class="hero">
+  <div class="glow glow--blue" aria-hidden="true"></div>
+  <div class="glow glow--purple" aria-hidden="true"></div>
+  <div class="wrap hero__in">
+    <span class="tag"><span class="tag__dot" aria-hidden="true"></span>EN POSTE — PRÉAVIS 1 MOIS</span>
+
+    <h1>Je remplace chaque processus manuel par un flux <span class="grad">auditable</span>.</h1>
+
+    <p class="hero__sub">
+      Ingénieur automatisation et agents IA. Je construis des chaînes métier de bout en bout sur
+      n8n auto-hébergé, avec une couche IA branchée dessus : paie, DSN, DPAE, facturation, contrats,
+      conformité et veille réglementaire, pour un groupe d'intérim aéroportuaire de 900 salariés.
+    </p>
+
+    <div class="hero__btns">
+      <a class="btn btn--solid" href="#projets">Voir mes projets</a>
+      <a class="btn btn--ghost" href="assets/BIRIBIN-Lineo-cv.pdf" download>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg>
+        Télécharger le CV
+      </a>
+    </div>
+
+    <p class="hero__meta">NOGENT-SUR-MARNE (94) · FRANCE ENTIÈRE · REMOTE OU PRÉSENTIEL · TOUT TYPE DE CONTRAT</p>
+
+    <div class="stats rv">
+      <div class="stat">
+        <div class="stat__n">~100</div>
+        <div class="stat__l">workflows n8n en production, auto-hébergés</div>
+      </div>
+      <div class="stat">
+        <div class="stat__n">51</div>
+        <div class="stat__l">workflows partagés en open source, licence MIT</div>
+      </div>
+      <div class="stat">
+        <div class="stat__n">14</div>
+        <div class="stat__l">serveurs MCP exposant le SI RH à un assistant IA</div>
+      </div>
+      <div class="stat">
+        <div class="stat__n">&lt; 1 %</div>
+        <div class="stat__l">d'écart sur bulletin de référence, moteur de paie interne</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ MARQUEE ============================ -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee__track">
+    <span>n8n&nbsp;· MCP&nbsp;· CLAUDE&nbsp;· PAIE&nbsp;· DSN&nbsp;· GEMINI&nbsp;· POSTGRESQL&nbsp;· DOCKER&nbsp;· NEXT.JS&nbsp;· LÉGIFRANCE&nbsp;· GRAPH&nbsp;API&nbsp;· RAG&nbsp;· OAUTH2&nbsp;· SUPABASE&nbsp;·&nbsp;</span>
+  </div>
+  <div class="marquee__track">
+    <span>n8n&nbsp;· MCP&nbsp;· CLAUDE&nbsp;· PAIE&nbsp;· DSN&nbsp;· GEMINI&nbsp;· POSTGRESQL&nbsp;· DOCKER&nbsp;· NEXT.JS&nbsp;· LÉGIFRANCE&nbsp;· GRAPH&nbsp;API&nbsp;· RAG&nbsp;· OAUTH2&nbsp;· SUPABASE&nbsp;·&nbsp;</span>
+  </div>
+</div>
+
+<!-- ============================ PROJETS ============================ -->
+<section class="sec" id="projets">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div>
+        <span class="eyebrow">PROJETS</span>
+        <h2 class="sec-title" style="margin-top:22px">Ce qui tourne<br>en production.</h2>
+      </div>
+      <p class="sec-note">Cadrage, spécification et recette de ma main. Le code est produit par des agents sous ma spécification, puis recetté ligne à ligne.</p>
+    </div>
+
+    <div class="grid-proj">
+
+      <!-- 01 -->
+      <a class="card rv" href="https://github.com/Biribin/n8n-workflows" target="_blank" rel="noopener">
+        <div class="card__media">
+          <div class="card__art"></div>
+          <div class="card__glyph" aria-hidden="true">n8n</div>
+          <span class="card__idx">01</span>
+          <span class="card__flag">OPEN SOURCE</span>
+          <div class="card__over">
+            <div class="card__circle" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+            </div>
+            <span>VOIR LE REPO</span>
+          </div>
+        </div>
+        <div class="card__body">
+          <h3 class="card__title">51 workflows n8n en open source</h3>
+          <p class="card__desc">Licence MIT : veille sur forum avec scoring par LLM, exploitation de n8n à l'échelle (workflow d'erreur, relance de déploiement, suivi du coût des API), veille réglementaire française, interface web servie par n8n sans JavaScript. Sanitisés par un script qui refuse la publication s'il détecte un secret ou une donnée personnelle.</p>
+          <ul class="tags"><li>n8n</li><li>MIT</li><li>LLM scoring</li><li>Légifrance</li><li>BOFiP</li></ul>
+        </div>
+      </a>
+
+      <!-- 02 -->
+      <article class="card card--p rv">
+        <div class="card__media">
+          <div class="card__art"></div>
+          <div class="card__glyph" aria-hidden="true">MCP</div>
+          <span class="card__idx">02</span>
+          <span class="card__flag">INTERNE</span>
+          <div class="card__over">
+            <div class="card__circle" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <span>PROJET INTERNE</span>
+          </div>
+        </div>
+        <div class="card__body">
+          <h3 class="card__title">Couche MCP sur SI RH</h3>
+          <p class="card__desc">14 serveurs MCP sur mesure exposant identité, badges, compétences, indemnités, formations, émargement, planning, CLD et boîtes Outlook à un assistant conversationnel. Cache-first : temps de réponse ramené de 4 s à 200 ms, dégradation automatique vers le scraper live.</p>
+          <ul class="tags"><li>MCP</li><li>Claude</li><li>Cache-first</li><li>API REST</li></ul>
+        </div>
+      </article>
+
+      <!-- 03 -->
+      <article class="card card--g rv">
+        <div class="card__media">
+          <div class="card__art"></div>
+          <div class="card__glyph" aria-hidden="true">PAIE</div>
+          <span class="card__idx">03</span>
+          <span class="card__flag">INTERNE</span>
+          <div class="card__over">
+            <div class="card__circle" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h4"/></svg>
+            </div>
+            <span>PROJET INTERNE</span>
+          </div>
+        </div>
+        <div class="card__body">
+          <h3 class="card__title">Moteur de paie interne</h3>
+          <p class="card__desc">Remplace une chaîne propriétaire (Tempo7 / Banco7 / Citrix), calibré à moins de 1 % d'écart sur bulletin de référence. Ma part : reverse-engineering des assiettes CSG déductible et non déductible, CRDS, URSSAF, FNAL, AGIRC-ARRCO (T1/T2, CEG, APEC), mutuelle et prévoyance avec seuil à 414 h cumulées, puis la recette ligne à ligne.</p>
+          <ul class="tags"><li>Paie</li><li>URSSAF</li><li>AGIRC-ARRCO</li><li>Recette</li></ul>
+        </div>
+      </article>
+
+      <!-- 04 -->
+      <article class="card rv">
+        <div class="card__media">
+          <div class="card__art"></div>
+          <div class="card__glyph" aria-hidden="true">DSN</div>
+          <span class="card__idx">04</span>
+          <span class="card__flag">12 TÂCHES / PROD</span>
+          <div class="card__over">
+            <div class="card__circle" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m7 12 5 5 5-5"/><path d="M5 21h14"/></svg>
+            </div>
+            <span>PROJET INTERNE</span>
+          </div>
+        </div>
+        <div class="card__body">
+          <h3 class="card__title">Déclaratif social automatisé</h3>
+          <p class="card__desc">DSN de bout en bout : détection et dépôt des signaux (FCTU, arrêt, reprise, amorçage, néant), relève des retours AEE/CCO, PAS mensuel depuis le CRM déclarant, réconciliation des CRM organismes. DPAE via l'API URSSAF avec un worker toutes les 15 minutes.</p>
+          <ul class="tags"><li>DSN</li><li>DPAE</li><li>API URSSAF</li><li>PAS</li></ul>
+        </div>
+      </article>
+
+      <!-- 05 -->
+      <article class="card card--p rv">
+        <div class="card__media">
+          <div class="card__art"></div>
+          <div class="card__glyph" aria-hidden="true">LEGI</div>
+          <span class="card__idx">05</span>
+          <span class="card__flag">RAG</span>
+          <div class="card__over">
+            <div class="card__circle" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M3 7h18"/><path d="m6 7-3 7h6z"/><path d="m18 7-3 7h6z"/></svg>
+            </div>
+            <span>PROJET INTERNE</span>
+          </div>
+        </div>
+        <div class="card__body">
+          <h3 class="card__title">Agent juridique sur Légifrance</h3>
+          <p class="card__desc">Client OAuth2 PISTE, ingestion du code du travail, des conventions collectives, des accords de branche intérim et de la jurisprudence en base vectorielle. Interrogation en langage naturel comme outil d'aide à la décision RH, veille réglementaire automatisée avec export.</p>
+          <ul class="tags"><li>OAuth2 PISTE</li><li>RAG</li><li>Pinecone</li><li>Veille</li></ul>
+        </div>
+      </article>
+
+      <!-- 06 -->
+      <article class="card card--k rv">
+        <div class="card__media">
+          <div class="card__art"></div>
+          <div class="card__glyph" aria-hidden="true">NEXT</div>
+          <span class="card__idx">06</span>
+          <span class="card__flag">MULTI-TENANT</span>
+          <div class="card__over">
+            <div class="card__circle" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 20V9"/></svg>
+            </div>
+            <span>PROJET INTERNE</span>
+          </div>
+        </div>
+        <div class="card__body">
+          <h3 class="card__title">Webapp métier Next.js</h3>
+          <p class="card__desc">Multi-tenant, authentification par mot de passe et 2FA TOTP, ingestion de l'ERP RH, arbitrage des pointages en interface et journal d'audit. Réconciliation triple source : planning prévisionnel × pointage badgeuse × relevé client, avec traçabilité vers le courriel d'origine.</p>
+          <ul class="tags"><li>Next.js</li><li>2FA TOTP</li><li>PostgreSQL</li><li>Audit</li></ul>
+        </div>
+      </article>
+
+      <!-- 07 -->
+      <a class="card card--g rv" href="https://biribin.github.io/ldp-coach-gallery" target="_blank" rel="noopener">
+        <div class="card__media">
+          <div class="card__art"></div>
+          <div class="card__glyph" aria-hidden="true">25×</div>
+          <span class="card__idx">07</span>
+          <span class="card__flag">EN LIGNE</span>
+          <div class="card__over">
+            <div class="card__circle" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+            </div>
+            <span>VOIR LA GALERIE</span>
+          </div>
+        </div>
+        <div class="card__body">
+          <h3 class="card__title">Galerie de 25 landing pages</h3>
+          <p class="card__desc">25 variantes de design complètes sur un cas client fictif de coach fitness : néobrutalisme, Bauhaus, Art déco, glassmorphisme, organique. Servies en statique sur GitHub Pages. Spécification et recette de ma main, rendu produit par des agents de code.</p>
+          <ul class="tags"><li>25 designs</li><li>GitHub Pages</li><li>Agents de code</li></ul>
+        </div>
+      </a>
+
+      <!-- 08 -->
+      <a class="card rv" href="https://aef-solutions.fr" target="_blank" rel="noopener">
+        <div class="card__media">
+          <div class="card__art"></div>
+          <div class="card__glyph" aria-hidden="true">AEF</div>
+          <span class="card__idx">08</span>
+          <span class="card__flag">EN LIGNE</span>
+          <div class="card__over">
+            <div class="card__circle" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+            </div>
+            <span>VOIR LE SITE</span>
+          </div>
+        </div>
+        <div class="card__body">
+          <h3 class="card__title">AEF Solutions, site produit</h3>
+          <p class="card__desc">Landing d'un espace métier multi-secteur, en Next.js, livrée avec des agents de code sous ma spécification.</p>
+          <ul class="tags"><li>Next.js</li><li>Landing</li><li>Agents de code</li></ul>
+        </div>
+      </a>
+
+      <!-- 09 -->
+      <article class="card card--k rv">
+        <div class="card__media">
+          <div class="card__art"></div>
+          <div class="card__glyph" aria-hidden="true">SCRAPE</div>
+          <span class="card__idx">09</span>
+          <span class="card__flag">FREELANCE</span>
+          <div class="card__over">
+            <div class="card__circle" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            </div>
+            <span>PROJET CLIENT</span>
+          </div>
+        </div>
+        <div class="card__body">
+          <h3 class="card__title">Lead generation &amp; acquisition</h3>
+          <p class="card__desc">Pipeline de bout en bout : identification de prospects à partir d'un nom d'entreprise ou d'un post LinkedIn, extraction via Apollo, scraping via Bright Data et Apify, enrichissement, génération de messages personnalisés par LLM et envoi automatisé depuis l'adresse du client.</p>
+          <ul class="tags"><li>Apollo</li><li>Bright Data</li><li>Apify</li><li>LLM</li></ul>
+        </div>
+      </article>
+
+      <!-- 10 -->
+      <a class="card card--p rv" href="https://visual-samples.com" target="_blank" rel="noopener">
+        <div class="card__media">
+          <div class="card__art"></div>
+          <div class="card__glyph" aria-hidden="true">3D</div>
+          <span class="card__idx">10</span>
+          <span class="card__flag">EN LIGNE</span>
+          <div class="card__over">
+            <div class="card__circle" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+            </div>
+            <span>VOIR LE SITE</span>
+          </div>
+        </div>
+        <div class="card__body">
+          <h3 class="card__title">Visual Samples</h3>
+          <p class="card__desc">Projet entrepreneurial de fin d'études : agence de production vidéo 3D, site vitrine et portfolio de réalisations. Dans le prolongement direct de la majeure Imagerie &amp; Réalité virtuelle du cycle Master.</p>
+          <ul class="tags"><li>3D</li><li>Portfolio</li><li>Entrepreneuriat</li></ul>
+        </div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================ PARCOURS ============================ -->
+<section class="sec" id="parcours">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div>
+        <span class="eyebrow">PARCOURS</span>
+        <h2 class="sec-title" style="margin-top:22px">Du cadrage<br>à la mise en production.</h2>
+      </div>
+      <p class="sec-note">Autonome sur mes projets. Une centaine de workflows en production, 51 partagés en open source.</p>
+    </div>
+
+    <div class="xp">
+      <article class="xp__item rv">
+        <div class="xp__top">
+          <div>
+            <h3 class="xp__role">Ingénieur automatisation et agents IA</h3>
+            <p class="xp__org">Groupe d'intérim aéroportuaire — 900 salariés, CDG &amp; Orly, Île-de-France</p>
+          </div>
+          <span class="xp__when">DEPUIS MARS 2026</span>
+        </div>
+        <ul class="xp__list">
+          <li>Automatisation de bout en bout de la chaîne SI du groupe : paie, DSN, DPAE, facturation, contrats, conformité et veille réglementaire.</li>
+          <li>Moteur de paie interne remplaçant une chaîne propriétaire, calibré à moins de 1 % d'écart sur bulletin de référence — assiettes de cotisations reverse-engineerées puis recettées ligne à ligne.</li>
+          <li>DSN intégralement automatisée : signaux, retours AEE/CCO, PAS mensuel, réconciliation des CRM organismes — 12 tâches planifiées en production. DPAE via l'API URSSAF, worker toutes les 15 minutes.</li>
+          <li>Couche MCP de 14 serveurs exposant le SI RH à un assistant IA, cache-first : 4 s → 200 ms, rafraîchissement nocturne, dégradation automatique vers le scraper live.</li>
+          <li>Calcul d'émargement : 12 716 vacations, 385 agents, 21 profils de rémunération, plages d'heures de nuit paramétrées par client. Réconciliation triple source avec arbitrage manuel en interface.</li>
+          <li>Veille réglementaire automatisée : barème PAS (BOFiP), fiches de paramétrage OC, accords de branche intérim depuis Légifrance, contre-calcul mensuel des taux sur source indépendante (API URSSAF, OpenFisca) pour détecter les écarts.</li>
+          <li>Intégration Microsoft 365 par Graph API et de l'ERP RH métier par API officielle et scraping authentifié (OAuth2, CSRF, sessions, fenêtres glissantes, pagination).</li>
+          <li>Ingestion documentaire multi-source : 13 dossiers Outlook clients, pièces jointes XLSX/PDF/CSV, OCR par LLM avec table d'exceptions apprise pour la résolution d'identité.</li>
+          <li>Qualité et conformité : contribution à l'audit ISO 9001:2015 (processus et procédure informatique, tableau des risques, tableau de bord d'indicateurs, registre de traitement RGPD), mise en conformité RGPD opérationnelle avec purges automatisées.</li>
+        </ul>
+      </article>
+
+      <div class="xp__grid2">
+        <article class="xp__item xp__item--alt rv">
+          <div class="xp__top">
+            <div>
+              <h3 class="xp__role">Automatisation &amp; IA appliquée</h3>
+              <p class="xp__org">PH Deco — Freelance</p>
+            </div>
+            <span class="xp__when">2025</span>
+          </div>
+          <ul class="xp__list">
+            <li>Pipeline de lead generation et d'outreach de bout en bout, à partir d'un nom d'entreprise ou d'un post LinkedIn.</li>
+            <li>Enrichissement des données prospects, centralisation structurée, messages personnalisés par LLM et envoi automatisé depuis l'adresse du client.</li>
+          </ul>
+        </article>
+
+        <article class="xp__item xp__item--alt2 rv">
+          <div class="xp__top">
+            <div>
+              <h3 class="xp__role">Automatisation &amp; IA appliquée</h3>
+              <p class="xp__org">Groupe Biribin — Freelance</p>
+            </div>
+            <span class="xp__when">2025</span>
+          </div>
+          <ul class="xp__list">
+            <li>Bot de gestion des connaissances : indexation et recherche vectorielle sur documents internes (Pinecone), système d'agents IA, génération de textes et d'images avec injection de branding.</li>
+            <li>Gestion automatisée de flotte : modélisation Supabase, permissions par rôle, historisation départ/retour, suivi kilométrique, incidents et upload d'images.</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="xp__grid2">
+        <article class="xp__item rv">
+          <div class="xp__top">
+            <div>
+              <h3 class="xp__role">Cycle Master — majeure Imagerie &amp; Réalité virtuelle</h3>
+              <p class="xp__org">EFREI, école supérieure d'ingénieurs</p>
+            </div>
+            <span class="xp__when">2019 — 2024</span>
+          </div>
+        </article>
+        <article class="xp__item xp__item--alt rv">
+          <div class="xp__top">
+            <div>
+              <h3 class="xp__role">Professeur particulier de physique-chimie</h3>
+              <p class="xp__org">Cours particuliers — Freelance</p>
+            </div>
+            <span class="xp__when">2025</span>
+          </div>
+          <ul class="xp__list">
+            <li>Deux élèves de terminale accompagnés pendant un an, préparation au baccalauréat.</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ PROFIL + SERVICES ============================ -->
+<section class="sec" id="profil">
+  <div class="wrap">
+    <div class="about">
+      <div class="portrait rv">
+        <div class="portrait__fallback" aria-hidden="true">LB</div>
+        <img class="portrait__img" src="assets/portrait.jpg" alt="Portrait de Linéo Biribin"
+             onerror="this.remove()">
+      </div>
+      <div class="rv">
+        <span class="eyebrow">PROFIL</span>
+        <p class="about__lead" style="margin-top:28px">
+          <strong>Mon métier n'est pas d'écrire le code</strong> : je cadre le besoin, j'assemble les briques
+          existantes, je fais produire le code par des agents et je le recette moi-même. Ma méthode tient en
+          une phrase — remplacer chaque processus manuel par un flux auditable.
+        </p>
+        <p class="about__p">
+          Automatisation et IA appliquée, en low-code. Je construis des chaînes métier de bout en bout sur n8n
+          auto-hébergé, avec une couche IA branchée dessus, et je reste autonome du cadrage à la mise en
+          production. Garde-fou constant : validation humaine avant tout envoi.
+        </p>
+        <p class="about__p">
+          Basé à Nogent-sur-Marne (94), mobile France entière et prêt à déménager. Disponible en full remote
+          comme en présentiel, y compris depuis l'étranger. Actuellement en poste, préavis d'un mois, tout
+          type de contrat.
+        </p>
+
+        <div class="svc">
+          <div class="svc__card">
+            <div class="svc__ico i-blue">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><path d="M10 6.5h4a3 3 0 0 1 3 3V14"/></svg>
+            </div>
+            <h3>Automatisation low-code</h3>
+            <p>n8n auto-hébergé à l'échelle : orchestration, idempotence, reprise sur erreur, planification, webhooks, files d'attente, sous-workflows réutilisables.</p>
+          </div>
+          <div class="svc__card">
+            <div class="svc__ico i-purple">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 1 4 4v1a4 4 0 0 1 0 8v1a4 4 0 0 1-8 0v-1a4 4 0 0 1 0-8V7a4 4 0 0 1 4-4Z"/><path d="M12 3v18"/></svg>
+            </div>
+            <h3>IA appliquée &amp; agents</h3>
+            <p>API Claude et Gemini en production, conception de serveurs MCP, OCR par LLM, RAG et bases vectorielles, développement assisté par agents (Claude Code, BMAD, GSD).</p>
+          </div>
+          <div class="svc__card">
+            <div class="svc__ico i-green">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15 4.5 10.5a4.6 4.6 0 0 1 6.5-6.5L13 6"/><path d="m15 9 4.5 4.5a4.6 4.6 0 0 1-6.5 6.5L11 18"/></svg>
+            </div>
+            <h3>Intégration &amp; API</h3>
+            <p>REST, webhooks, OAuth2, Microsoft Graph (Outlook, Excel, SharePoint, Teams), scraping authentifié — sessions, CSRF, pagination, fenêtres glissantes.</p>
+          </div>
+          <div class="svc__card">
+            <div class="svc__ico i-pink">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>
+            </div>
+            <h3>Données &amp; exploitation</h3>
+            <p>PostgreSQL, Supabase, SQLite, réconciliation multi-source, caches. Linux, Docker Compose, VPS, Coolify, Caddy, déploiement continu, journalisation, alerting.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ COMPÉTENCES ============================ -->
+<section class="sec" id="competences">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <div>
+        <span class="eyebrow">COMPÉTENCES</span>
+        <h2 class="sec-title" style="margin-top:22px">La boîte à outils.</h2>
+      </div>
+      <p class="sec-note">Lecture de code et logique algorithmique : relire et recetter, pas écrire.</p>
+    </div>
+
+    <div class="skills rv">
+      <div class="skills__col">
+        <h4>Automatisation &amp; IA</h4>
+        <ul class="tags">
+          <li>n8n auto-hébergé</li><li>MCP</li><li>API Claude</li><li>API Gemini</li><li>RAG</li>
+          <li>Pinecone</li><li>OCR par LLM</li><li>Prompt engineering</li><li>Claude Code</li>
+          <li>BMAD</li><li>GSD</li>
+        </ul>
+      </div>
+      <div class="skills__col">
+        <h4>Intégration, données, exploitation</h4>
+        <ul class="tags">
+          <li>API REST</li><li>OAuth2</li><li>Microsoft Graph</li><li>Scraping authentifié</li>
+          <li>Bright Data</li><li>Apify</li><li>Apollo</li><li>PostgreSQL</li><li>Supabase</li>
+          <li>SQLite</li><li>XLSX / CSV / PDF</li><li>Linux Ubuntu</li><li>Docker Compose</li>
+          <li>VPS</li><li>Coolify</li><li>Caddy</li><li>DNS / TLS</li><li>Next.js</li>
+        </ul>
+      </div>
+      <div class="skills__col">
+        <h4>Métier &amp; gestion de projet</h4>
+        <ul class="tags">
+          <li>Paie &amp; cotisations</li><li>DSN</li><li>DPAE</li><li>PAS</li><li>CCN intérim</li>
+          <li>Gestion des temps</li><li>Conformité aéroportuaire</li><li>Cadrage</li>
+          <li>Spécification</li><li>Recette</li><li>ISO 9001</li><li>RGPD opérationnel</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="langs rv">
+      <span><b>Français</b> — langue maternelle</span>
+      <span><b>Anglais</b> — TOEIC 830, lu/écrit solide, oral opérationnel</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ CONTACT ============================ -->
+<section class="contact" id="contact">
+  <div class="glow glow--purple" aria-hidden="true"></div>
+  <div class="glow glow--green" aria-hidden="true"></div>
+  <div class="wrap contact__in">
+    <span class="eyebrow">CONTACT</span>
+    <h2>Un process à <span class="grad">automatiser</span> ?</h2>
+    <p class="contact__p">
+      Actuellement en poste, préavis d'un mois, tout type de contrat. Nogent-sur-Marne (94), mobile France
+      entière et prêt à déménager — disponible en full remote comme en présentiel, y compris depuis l'étranger.
+    </p>
+    <div class="contact__btns">
+      <a class="btn btn--cta btn--lg" href="mailto:lineobiribin@gmail.com?subject=Prise%20de%20contact">Écrivez-moi</a>
+      <a class="btn btn--ghost btn--lg" href="assets/BIRIBIN-Lineo-cv.pdf" download>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg>
+        Télécharger le CV
+      </a>
+    </div>
+    <div class="contact__links">
+      <a href="mailto:lineobiribin@gmail.com">lineobiribin@gmail.com</a>
+      <a href="tel:+33650559184">06 50 55 91 84</a>
+      <a href="https://www.linkedin.com/in/lineo-biribin" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="https://github.com/Biribin" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/Biribin/n8n-workflows" target="_blank" rel="noopener">Workflows publiés</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer__in">
+    <span>© <span id="year">2026</span> LINÉO BIRIBIN — TOUS DROITS RÉSERVÉS</span>
+    <span>NOGENT-SUR-MARNE (94) · FRANCE ENTIÈRE · REMOTE OU PRÉSENTIEL</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- Iris wipe on load ---------- */
+  var iris = document.getElementById('iris');
+  function openIris(){
+    iris.classList.add('open');
+    setTimeout(function(){ iris.setAttribute('data-done',''); }, reduce ? 0 : 950);
+  }
+  if (reduce) { openIris(); }
+  else { window.addEventListener('load', function(){ setTimeout(openIris, 260); }); }
+
+  /* ---------- Iris wipe on in-page navigation ---------- */
+  function irisTo(hash){
+    var target = document.querySelector(hash);
+    if(!target) return;
+    if(reduce){ target.scrollIntoView(); return; }
+    iris.removeAttribute('data-done');
+    iris.style.transitionDuration = '.42s';
+    iris.classList.remove('open');                 // close (circle grows to cover)
+    setTimeout(function(){
+      target.scrollIntoView({behavior:'auto', block:'start'});
+      iris.classList.add('open');                  // reopen on the new position
+      setTimeout(function(){
+        iris.setAttribute('data-done','');
+        iris.style.transitionDuration = '';
+      }, 460);
+    }, 440);
+  }
+
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){
+    a.addEventListener('click', function(e){
+      var hash = a.getAttribute('href');
+      if(hash.length < 2) return;
+      e.preventDefault();
+      closeMenu();
+      irisTo(hash);
+      history.replaceState(null,'',hash);
+    });
+  });
+
+  /* ---------- Nav state + mobile menu ---------- */
+  var nav = document.getElementById('nav'), burger = document.getElementById('burger');
+  function onScroll(){ nav.classList.toggle('is-stuck', window.scrollY > 12); }
+  onScroll(); window.addEventListener('scroll', onScroll, {passive:true});
+
+  function closeMenu(){ nav.classList.remove('is-open'); burger.setAttribute('aria-expanded','false'); }
+  burger.addEventListener('click', function(){
+    var open = nav.classList.toggle('is-open');
+    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  /* ---------- Reveal on scroll ---------- */
+  var items = document.querySelectorAll('.rv');
+  if('IntersectionObserver' in window && !reduce){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, {rootMargin:'0px 0px -12% 0px', threshold:.12});
+    items.forEach(function(el, i){ el.style.transitionDelay = (i % 2 ? 90 : 0) + 'ms'; io.observe(el); });
+  } else {
+    items.forEach(function(el){ el.classList.add('in'); });
+  }
+
+  /* ---------- Footer year ---------- */
+  document.getElementById('year').textContent = new Date().getFullYear();
+})();
+</script>
+</body>
+</html>
