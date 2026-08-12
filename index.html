@@ -335,6 +335,12 @@ section{position:relative}
 .contact h2{font-size:clamp(2.5rem,7.5vw,4.5rem);line-height:.98;letter-spacing:-.045em;max-width:20ch;margin:24px auto 0}
 .contact__p{max-width:640px;margin:28px auto 0;color:var(--muted)}
 .contact__btns{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;margin-top:48px}
+.contact__alt{
+  display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:center;align-items:center;
+  margin-top:22px;font-family:var(--f-mono);font-size:12px;letter-spacing:.04em;color:var(--dim);
+}
+.contact__alt a{display:inline-flex;align-items:center;gap:7px;color:var(--muted);border-bottom:1px solid rgba(255,255,255,.12);padding-bottom:2px;transition:color .3s var(--ease),border-color .3s var(--ease)}
+.contact__alt a:hover{color:#fff;border-color:#fff}
 .contact__links{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;margin-top:44px;font-family:var(--f-mono);font-size:13px;color:var(--muted)}
 .contact__links a{border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:3px;transition:color .3s var(--ease),border-color .3s var(--ease)}
 .contact__links a:hover{color:#fff;border-color:#fff}
@@ -433,7 +439,7 @@ section{position:relative}
     <p class="hero__sub">
       Ingénieur automatisation et agents IA. Je construis des chaînes métier de bout en bout sur
       n8n auto-hébergé, avec une couche IA branchée dessus : paie, DSN, DPAE, facturation, contrats,
-      conformité et veille réglementaire, pour un groupe d'intérim aéroportuaire de 900 salariés.
+      conformité et veille réglementaire, pour un groupe d'intérim aéroportuaire de 900 intérimaires.
     </p>
 
     <div class="hero__btns">
@@ -720,7 +726,7 @@ section{position:relative}
         <div class="xp__top">
           <div>
             <h3 class="xp__role">Ingénieur automatisation et agents IA</h3>
-            <p class="xp__org">Groupe d'intérim aéroportuaire — 900 salariés, CDG &amp; Orly, Île-de-France</p>
+            <p class="xp__org">Groupe d'intérim aéroportuaire — 900 intérimaires, CDG &amp; Orly, Île-de-France</p>
           </div>
           <span class="xp__when">DEPUIS MARS 2026</span>
         </div>
@@ -914,14 +920,29 @@ section{position:relative}
       entière et prêt à déménager — disponible en full remote comme en présentiel, y compris depuis l'étranger.
     </p>
     <div class="contact__btns">
-      <a class="btn btn--cta btn--lg" href="mailto:lineobiribin@gmail.com?subject=Prise%20de%20contact">Écrivez-moi</a>
+      <a class="btn btn--cta btn--lg" href="mailto:lineobiribin@gmail.com?subject=Prise%20de%20contact%20%E2%80%94%20Lin%C3%A9o%20Biribin&amp;body=Bonjour%20Lin%C3%A9o%2C%0D%0A%0D%0A">Écrivez-moi</a>
       <a class="btn btn--ghost btn--lg" href="assets/BIRIBIN-Lineo-cv.pdf" download>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg>
         Télécharger le CV
       </a>
     </div>
+
+    <div class="contact__alt">
+      <span>OUVRIR DIRECTEMENT DANS</span>
+      <a href="https://outlook.office.com/mail/deeplink/compose?to=lineobiribin@gmail.com&amp;subject=Prise%20de%20contact%20%E2%80%94%20Lin%C3%A9o%20Biribin&amp;body=Bonjour%20Lin%C3%A9o%2C%0D%0A%0D%0A" target="_blank" rel="noopener" aria-label="Rédiger un message dans Outlook, adresse et objet déjà remplis">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        Outlook
+      </a>
+      <a href="https://outlook.live.com/mail/0/deeplink/compose?to=lineobiribin@gmail.com&amp;subject=Prise%20de%20contact%20%E2%80%94%20Lin%C3%A9o%20Biribin&amp;body=Bonjour%20Lin%C3%A9o%2C%0D%0A%0D%0A" target="_blank" rel="noopener" aria-label="Rédiger un message dans Outlook.com, adresse et objet déjà remplis">
+        Outlook.com
+      </a>
+      <a href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=lineobiribin@gmail.com&amp;su=Prise%20de%20contact%20%E2%80%94%20Lin%C3%A9o%20Biribin&amp;body=Bonjour%20Lin%C3%A9o%2C%0D%0A%0D%0A" target="_blank" rel="noopener" aria-label="Rédiger un message dans Gmail, adresse et objet déjà remplis">
+        Gmail
+      </a>
+    </div>
+
     <div class="contact__links">
-      <a href="mailto:lineobiribin@gmail.com">lineobiribin@gmail.com</a>
+      <a href="mailto:lineobiribin@gmail.com?subject=Prise%20de%20contact%20%E2%80%94%20Lin%C3%A9o%20Biribin&amp;body=Bonjour%20Lin%C3%A9o%2C%0D%0A%0D%0A">lineobiribin@gmail.com</a>
       <a href="tel:+33650559184">06 50 55 91 84</a>
       <a href="https://www.linkedin.com/in/lineo-biribin" target="_blank" rel="noopener">LinkedIn</a>
       <a href="https://github.com/Biribin" target="_blank" rel="noopener">GitHub</a>
