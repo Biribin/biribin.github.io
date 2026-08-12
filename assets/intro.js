@@ -557,17 +557,23 @@
     px(g, cx + 3, cy - 3, 3, 3, C.emblemB);
     px(g, cx - 1, cy + 3, 3, 3, C.emblemB);
   }
+  // Police 4x5 : en 3 de large, le N n'a pas la place de sa diagonale et se lit M.
   var GLYPH = {
-    L: ['100', '100', '100', '100', '111'], I: ['010', '010', '010', '010', '010'],
-    N: ['101', '111', '111', '101', '101'], E: ['111', '100', '111', '100', '111'],
-    O: ['111', '101', '101', '101', '111'], ' ': ['000', '000', '000', '000', '000']
+    L: ['1000', '1000', '1000', '1000', '1111'], I: ['0100', '0100', '0100', '0100', '0100'],
+    N: ['1001', '1101', '1011', '1001', '1001'], E: ['1111', '1000', '1110', '1000', '1111'],
+    É: ['1111', '1000', '1110', '1000', '1111'], O: ['1111', '1001', '1001', '1001', '1111'],
+    ' ': ['0000', '0000', '0000', '0000', '0000']
   };
   function tinyText(g, str, x, y, col) {
     for (var i = 0; i < str.length; i++) {
       var rows = GLYPH[str[i]];
       if (!rows) continue;
-      for (var r = 0; r < 5; r++) for (var c = 0; c < 3; c++) {
-        if (rows[r][c] === '1') px(g, x + i * 4 + c, y + r, 1, 1, col);
+      for (var r = 0; r < 5; r++) for (var c = 0; c < 4; c++) {
+        if (rows[r][c] === '1') px(g, x + i * 5 + c, y + r, 1, 1, col);
+      }
+      if (str[i] === 'É') {                       // accent aigu, au-dessus de la capitale
+        px(g, x + i * 5 + 1, y - 2, 1, 1, col);
+        px(g, x + i * 5 + 2, y - 3, 1, 1, col);
       }
     }
   }
@@ -599,11 +605,11 @@
     emblem(g, x + Math.floor(w / 2), y + 1);
     // enseigne : large, avec le nom bien centré et de la marge de chaque côté
     var sw = 56, sx2 = x + Math.floor(w / 2) - sw / 2, sy2 = y + 18;
-    var txt = 'LINEO', txtW = txt.length * 4 - 1;
+    var txt = 'LINÉO', txtW = txt.length * 5 - 1;
     px(g, sx2 - 1, sy2 - 1, sw + 2, 13, C.outline);
     px(g, sx2, sy2, sw, 11, C.signBg);
     px(g, sx2, sy2, sw, 1, '#fff8dc');
-    tinyText(g, txt, sx2 + Math.round((sw - txtW) / 2), sy2 + 3, C.signInk);
+    tinyText(g, txt, sx2 + Math.round((sw - txtW) / 2), sy2 + 4, C.signInk);
 
     var dw = 18, dx = x + Math.floor(w / 2) - dw / 2, dh = 14;
     px(g, dx - 1, y + h - dh - 1, dw + 2, dh + 1, C.outline);
@@ -848,7 +854,7 @@
     for (var b = 0; b < 6; b++) px(g, 240 + b * 5, 25, 4, 9, cols[b]);
     px(g, 250, 80, 14, 20, I.deskB);
     px(g, 251, 81, 12, 18, I.desk);
-    px(f, 236, 90, 38, 3, I.deskB);
+    px(g, 236, 90, 38, 3, I.deskB);   // traverse : derriere lui, il est assis devant
 
     // ------------------------------------------------------------------- lit
     px(g, 278, 72, 8, 30, I.bed);
@@ -907,7 +913,9 @@
       }
     },
     tv: {
-      x: 160, dir: 'sit', sitY: 108, label: 'devant la télé',
+      // sitY 106 : les pieds retombent sur la ligne de sol du canape (y 108),
+      // buste au-dessus de l'assise et jambes visibles devant le bord.
+      x: 160, dir: 'sit', sitY: 106, label: 'devant la télé',
       line: 'Pause. Un épisode, pas plus.',
       anim: function (g, t) {
         var f = Math.floor(t / 160) % 4;
@@ -996,15 +1004,15 @@
       }
     },
     lecture: {
-      x: 150, dir: 'sit', sitY: 108, label: 'il lit',
+      x: 150, dir: 'sit', sitY: 106, label: 'il lit',
       line: 'Deux pages avant de dormir.',
       anim: function (g, t) {
         var k = Math.floor(t / 900) % 2;
-        px(g, 158, 86, 16, 12, I.book);
-        px(g, 159, 87, 14, 10, I.pillow);
-        px(g, 165 + k, 87, 1, 10, I.book);
-        px(g, 161, 90, 4, 1, I.metalC);
-        px(g, 168, 93, 4, 1, I.metalC);
+        px(g, 158, 84, 16, 12, I.book);
+        px(g, 159, 85, 14, 10, I.pillow);
+        px(g, 165 + k, 85, 1, 10, I.book);
+        px(g, 161, 88, 4, 1, I.metalC);
+        px(g, 168, 91, 4, 1, I.metalC);
       }
     },
     menage: {
@@ -1187,23 +1195,27 @@
 
       if (walkT < 1) {
         what = 'il rentre du travail';
-        heroBig(g, hx, LANE, 'side', fi, intFlip);
+        // debout, il marche devant les meubles (pieds sur LANE, sous eux) :
+        // l'avant-plan passe derriere lui, sinon le canape lui coupe la tete
         g.drawImage(int2.c, 0, 0);
+        heroBig(g, hx, LANE, 'side', fi, intFlip);
       } else {
         what = ACT.label;
         hx = ACT.x;
         if (ACT.dir === 'sit') {
           hy = ACT.sitY || 104;
-          blitBig(g, sprite('sit', 0), hx, hy, ACT.flip);
+          // assis : il est pose sur l'assise, donc devant le bord du canape.
+          // Sinon celui-ci lui mange le buste et escamote les jambes.
           g.drawImage(int2.c, 0, 0);
+          blitBig(g, sprite('sit', 0), hx, hy, ACT.flip);
           ACT.anim(g, t, hx);
         } else if (ACT.dir === 'lie') {
           g.drawImage(int2.c, 0, 0);
           ACT.anim(g, t, hx);
           hy = 84;
         } else {
-          heroBig(g, hx, LANE, ACT.dir === 'side' ? 'side' : 'up', 1, ACT.flip);
           g.drawImage(int2.c, 0, 0);
+          heroBig(g, hx, LANE, ACT.dir === 'side' ? 'side' : 'up', 1, ACT.flip);
           ACT.anim(g, t, hx);
         }
       }
