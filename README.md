@@ -1,5 +1,8 @@
 # Landing page — Linéo Biribin
 
+**En ligne : [biribin.github.io](https://biribin.github.io)** — repo public `Biribin/biribin.github.io`,
+GitHub Pages sur `main` / root.
+
 Page unique statique, sans build, sans dépendance : un seul fichier [index.html](index.html)
 (HTML + CSS + JS inline, polices chargées depuis Google Fonts).
 
@@ -14,7 +17,7 @@ python -m http.server 8000   # puis http://localhost:8000
 ## Design system
 
 | Token | Valeur |
-|---|---|
+| --- | --- |
 | Fond / texte | `#050505` / `#FFFFFF` |
 | Accents | Electric Blue `#3B82F6`, Deep Purple `#9333EA`, Signal Green `#22C55E`, Pink `#EC4899` |
 | Titres | Space Grotesk 500/700, tracking serré (`-.045em` sur le H1) |
