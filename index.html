@@ -13,6 +13,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@300;400&family=Press+Start+2P&display=swap" rel="stylesheet">
+<script>
+/* Sans JS, ni l'iris ni l'intro ne doivent masquer le site. */
+(function(){
+  document.documentElement.classList.add('js');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.__INTRO__ = !reduce && location.search.indexOf('nointro') < 0;
+})();
+</script>
+<script src="assets/intro.js" defer></script>
 <style>
 /* ============================================================
    DESIGN SYSTEM
@@ -22,7 +31,7 @@
   --bg-2:#0a0a0a;
   --fg:#ffffff;
   --muted:#9CA3AF;
-  --dim:#4B5563;
+  --dim:#7C8695;              /* 5,5:1 sur #050505 — WCAG AA sur du 12px */
   --blue:#3B82F6;
   --blue-cta:#2563EB;
   --purple:#9333EA;
@@ -44,7 +53,7 @@
 }
 
 *,*::before,*::after{box-sizing:border-box}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+html{scroll-behavior:smooth;scroll-padding-top:96px;-webkit-text-size-adjust:100%}
 body{
   margin:0;background:var(--bg);color:var(--fg);
   font-family:var(--f-body);font-weight:300;font-size:16px;line-height:1.65;
@@ -60,7 +69,7 @@ p{margin:0}
 
 /* CRT scanlines ------------------------------------------------ */
 .scanlines{
-  position:fixed;inset:0;z-index:90;pointer-events:none;
+  position:fixed;inset:0;z-index:130;pointer-events:none;
   background:repeating-linear-gradient(
     to bottom,
     rgba(0,0,0,.5) 0px, rgba(0,0,0,.5) 2px,
@@ -70,7 +79,7 @@ p{margin:0}
 }
 .vignette{
   position:fixed;inset:0;z-index:89;pointer-events:none;
-  background:radial-gradient(120% 90% at 50% 0%,transparent 40%,rgba(0,0,0,.75) 100%);
+  background:radial-gradient(120% 90% at 50% 0%,transparent 58%,rgba(0,0,0,.38) 100%);
 }
 
 /* Iris wipe (page transition) ---------------------------------- */
@@ -94,7 +103,7 @@ section{position:relative}
 .sec{padding:calc(var(--gut) * 2.2) 0}
 .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--gut-s);margin-bottom:var(--gut)}
 .eyebrow{
-  font-family:var(--f-pixel);font-size:10px;line-height:1.8;color:var(--muted);
+  font-family:var(--f-pixel);font-size:10px;line-height:1.8;font-weight:400;color:var(--muted);
   text-transform:uppercase;letter-spacing:.06em;
   display:inline-flex;align-items:center;gap:12px;
 }
@@ -320,7 +329,7 @@ section{position:relative}
 
 /* Skills columns */
 .skills{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gut-s)}
-.skills__col h4{font-size:14px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:500}
+.skills__col h3{font-size:14px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:500}
 .skills__col .tags{margin-top:20px}
 .langs{display:flex;flex-wrap:wrap;gap:var(--gut-s);margin-top:var(--gut);font-size:15px;color:var(--muted)}
 .langs b{font-family:var(--f-head);color:#fff;font-weight:700}
@@ -351,12 +360,106 @@ section{position:relative}
   font-family:var(--f-mono);font-size:12px;color:var(--dim);
   padding-top:28px;padding-bottom:28px;
 }
+.footer__in a{border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:2px;transition:color .3s var(--ease),border-color .3s var(--ease)}
+.footer__in a:hover{color:#fff;border-color:#fff}
 
 /* ============================================================
    REVEAL ANIMATION
    ============================================================ */
 .rv{opacity:0;transform:translateY(28px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
 .rv.in{opacity:1;transform:none}
+
+/* ============================================================
+   INTRO PIXEL-ART
+   ============================================================ */
+/* Sans JS : ni voile noir, ni contenu masqué en attente d'IntersectionObserver. */
+html:not(.js) .iris,html:not(.js) .intro,html:not(.js) .buddy{display:none !important}
+html:not(.js) .rv{opacity:1 !important;transform:none !important}
+html.intro-lock,html.intro-lock body{overflow:hidden;height:100%}
+.intro{
+  position:fixed;inset:0;z-index:110;background:#050505;
+  display:none;place-items:center;overflow:hidden;
+  transition:opacity .55s var(--ease);
+}
+.intro.on{display:grid}
+/* pendant l'intro, l'habillage CRT du site s'efface : la scène a le sien */
+.intro.on ~ .scanlines{opacity:.1}
+.intro.on ~ .vignette{opacity:0}
+.intro.out{opacity:0;pointer-events:none}
+.intro::before{
+  content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(125% 105% at 50% 50%,transparent 52%,rgba(0,0,0,.88) 100%);
+}
+.intro::after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:#fff;opacity:var(--flash,0)}
+#intro-canvas{image-rendering:pixelated;display:block;cursor:pointer;will-change:transform}
+.intro__skip{
+  position:absolute;top:26px;right:26px;z-index:4;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;color:var(--muted);
+  background:var(--glass);border:1px solid var(--glass-line);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-radius:999px;padding:11px 18px;cursor:pointer;
+  transition:color .3s var(--ease),border-color .3s var(--ease);
+}
+.intro__skip:hover{color:#fff;border-color:#fff}
+.intro__box{
+  position:absolute;left:50%;bottom:38px;z-index:4;width:min(700px,90vw);
+  transform:translateX(-50%) translateY(10px);
+  background:#f7f4e6;border:4px solid #12101a;
+  box-shadow:inset 0 0 0 3px #a9a9b8,0 20px 60px rgba(0,0,0,.65);
+  padding:20px 26px;opacity:0;pointer-events:none;
+  transition:opacity .3s var(--ease),transform .3s var(--ease);
+}
+.intro__box.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.intro__box p{font-family:var(--f-pixel);font-size:11px;line-height:1.9;color:#12101a;margin:0;min-height:2.6em}
+.intro__box::after{
+  content:"▼";position:absolute;right:14px;bottom:9px;
+  font-family:var(--f-pixel);font-size:8px;color:#12101a;opacity:0;
+}
+.intro__box.done::after{opacity:1;animation:blink 1s steps(2) infinite}
+/* ============================================================
+   LE COMPAGNON SUR LE SITE
+   ============================================================ */
+.buddy{
+  position:fixed;left:0;bottom:14px;z-index:95;width:120px;height:72px;   /* au-dessus de la vignette */
+  pointer-events:none;opacity:0;transition:opacity .8s var(--ease);
+}
+.buddy.on{opacity:1}
+.buddy__c{
+  width:120px;height:72px;image-rendering:pixelated;display:block;
+  pointer-events:auto;cursor:pointer;
+  filter:drop-shadow(0 8px 10px rgba(0,0,0,.55));
+}
+/* l'indicateur d'arrivée : il vient de se poser quelque part */
+.buddy__ping{
+  position:absolute;left:50%;bottom:100%;margin-bottom:2px;
+  transform:translateX(-50%) scale(.5);opacity:0;
+  font-family:var(--f-pixel);font-size:10px;line-height:1;color:#f7d94c;
+  background:rgba(5,5,5,.8);border:1px solid var(--glass-line);border-radius:7px;
+  padding:6px 9px;
+  transition:opacity .2s var(--ease),transform .32s cubic-bezier(.2,1.6,.4,1);
+}
+.buddy__ping.on{opacity:1;transform:translateX(-50%) scale(1);animation:bob 1s var(--ease) infinite}
+@keyframes bob{
+  0%,100%{transform:translateX(-50%) translateY(0) scale(1)}
+  50%{transform:translateX(-50%) translateY(-6px) scale(1)}
+}
+.buddy__bubble{
+  position:absolute;left:50%;bottom:100%;transform:translateX(-50%) translateY(-6px);
+  margin-bottom:26px;width:max-content;max-width:min(320px,72vw);
+  background:#f7f4e6;color:#12101a;border:3px solid #12101a;
+  box-shadow:inset 0 0 0 2px #a9a9b8,0 14px 40px rgba(0,0,0,.55);
+  padding:10px 12px;font-family:var(--f-pixel);font-size:8px;line-height:1.9;
+  opacity:0;pointer-events:none;transition:opacity .25s var(--ease),transform .25s var(--ease);
+}
+.buddy.talk .buddy__bubble{opacity:1;transform:translateX(-50%) translateY(-12px)}
+.buddy__bubble.right{left:auto;right:-8px;transform:translateX(0) translateY(-6px)}
+.buddy.talk .buddy__bubble.right{transform:translateX(0) translateY(-12px)}
+@media (max-width:560px){.buddy{display:none}}
+@media (max-width:640px){
+  .intro__box{bottom:20px;padding:14px 16px}
+  .intro__box p{font-size:9px;line-height:1.8}
+  .intro__skip{top:14px;right:14px;padding:9px 14px;font-size:10px}
+}
 
 /* ============================================================
    RESPONSIVE
@@ -372,10 +475,16 @@ section{position:relative}
   .nav__links{
     position:fixed;top:80px;left:0;right:0;flex-direction:column;align-items:flex-start;gap:0;
     background:rgba(5,5,5,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-    border-bottom:1px solid var(--glass-line);
-    max-height:0;overflow:hidden;transition:max-height .45s var(--ease);margin:0;
+    border-bottom:1px solid transparent;margin:0;
+    /* visibility retire les liens du parcours de tabulation quand le menu est fermé */
+    max-height:0;overflow:hidden;visibility:hidden;
+    transition:max-height .45s var(--ease),visibility 0s .45s;
   }
-  .nav.is-open .nav__links{max-height:60vh}
+  .nav.is-open .nav__links{
+    max-height:calc(100vh - 80px);overflow-y:auto;visibility:visible;
+    border-bottom-color:var(--glass-line);
+    transition:max-height .45s var(--ease),visibility 0s;
+  }
   .nav__links a{padding:20px 40px;width:100%}
   .nav__cta{display:none}
   .nav__burger{display:block}
@@ -388,6 +497,17 @@ section{position:relative}
 @media (max-width:520px){
   .stats{grid-template-columns:1fr}
   .hero__btns .btn,.contact__btns .btn{width:100%}
+  .sec-head{flex-direction:column;align-items:flex-start}
+}
+/* Impression : fond blanc, encre noire, habillage retiré. */
+@media print{
+  body{background:#fff;color:#000}
+  .scanlines,.vignette,.iris,.intro,.buddy,.glow,.marquee,.nav{display:none !important}
+  .rv{opacity:1 !important;transform:none !important}
+  .grad{-webkit-text-fill-color:#000;color:#000}
+  a{color:#000}
+  .stat,.xp__item,.svc__card,.tags li{border-color:#bbb;background:none}
+  .sec{padding:24px 0}
 }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
@@ -401,6 +521,13 @@ section{position:relative}
 </head>
 <body>
 
+<!-- Intro pixel-art : le personnage remonte le ponton et entre dans le bâtiment -->
+<div class="intro" id="intro" role="dialog" aria-label="Introduction animée en pixel art">
+  <canvas id="intro-canvas" width="320" height="180" aria-hidden="true"></canvas>
+  <button class="intro__skip" id="intro-skip" type="button">PASSER L'INTRO ▸</button>
+  <div class="intro__box" id="intro-box"><p id="intro-text" aria-live="polite"></p></div>
+</div>
+
 <!-- Iris wipe transition -->
 <div class="iris" id="iris" aria-hidden="true"><span class="iris__mark">LB / LOADING</span></div>
 <div class="scanlines" aria-hidden="true"></div>
@@ -412,7 +539,7 @@ section{position:relative}
     <a class="logo" href="#top" aria-label="Linéo Biribin — accueil">
       <span class="logo__dot" aria-hidden="true"></span>Linéo&nbsp;Biribin
     </a>
-    <button class="nav__burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="navlinks">
+    <button class="nav__burger" id="burger" type="button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="navlinks">
       <span></span><span></span><span></span>
     </button>
     <nav class="nav__links" id="navlinks" aria-label="Navigation principale">
@@ -477,8 +604,10 @@ section{position:relative}
 <div class="marquee" aria-hidden="true">
   <div class="marquee__track">
     <span>n8n&nbsp;· MCP&nbsp;· CLAUDE&nbsp;· PAIE&nbsp;· DSN&nbsp;· GEMINI&nbsp;· POSTGRESQL&nbsp;· DOCKER&nbsp;· NEXT.JS&nbsp;· LÉGIFRANCE&nbsp;· GRAPH&nbsp;API&nbsp;· RAG&nbsp;· OAUTH2&nbsp;· SUPABASE&nbsp;·&nbsp;</span>
+    <span>n8n&nbsp;· MCP&nbsp;· CLAUDE&nbsp;· PAIE&nbsp;· DSN&nbsp;· GEMINI&nbsp;· POSTGRESQL&nbsp;· DOCKER&nbsp;· NEXT.JS&nbsp;· LÉGIFRANCE&nbsp;· GRAPH&nbsp;API&nbsp;· RAG&nbsp;· OAUTH2&nbsp;· SUPABASE&nbsp;·&nbsp;</span>
   </div>
   <div class="marquee__track">
+    <span>n8n&nbsp;· MCP&nbsp;· CLAUDE&nbsp;· PAIE&nbsp;· DSN&nbsp;· GEMINI&nbsp;· POSTGRESQL&nbsp;· DOCKER&nbsp;· NEXT.JS&nbsp;· LÉGIFRANCE&nbsp;· GRAPH&nbsp;API&nbsp;· RAG&nbsp;· OAUTH2&nbsp;· SUPABASE&nbsp;·&nbsp;</span>
     <span>n8n&nbsp;· MCP&nbsp;· CLAUDE&nbsp;· PAIE&nbsp;· DSN&nbsp;· GEMINI&nbsp;· POSTGRESQL&nbsp;· DOCKER&nbsp;· NEXT.JS&nbsp;· LÉGIFRANCE&nbsp;· GRAPH&nbsp;API&nbsp;· RAG&nbsp;· OAUTH2&nbsp;· SUPABASE&nbsp;·&nbsp;</span>
   </div>
 </div>
@@ -732,7 +861,7 @@ section{position:relative}
         </div>
         <ul class="xp__list">
           <li>Automatisation de bout en bout de la chaîne SI du groupe : paie, DSN, DPAE, facturation, contrats, conformité et veille réglementaire.</li>
-          <li>Moteur de paie interne remplaçant une chaîne propriétaire, calibré à moins de 1 % d'écart sur bulletin de référence — assiettes de cotisations reverse-engineerées puis recettées ligne à ligne.</li>
+          <li>Moteur de paie interne remplaçant une chaîne propriétaire, calibré à moins de 1 % d'écart sur bulletin de référence — assiettes de cotisations reconstituées par reverse engineering, puis recettées ligne à ligne.</li>
           <li>DSN intégralement automatisée : signaux, retours AEE/CCO, PAS mensuel, réconciliation des CRM organismes — 12 tâches planifiées en production. DPAE via l'API URSSAF, worker toutes les 15 minutes.</li>
           <li>Couche MCP de 14 serveurs exposant le SI RH à un assistant IA, cache-first : 4 s → 200 ms, rafraîchissement nocturne, dégradation automatique vers le scraper live.</li>
           <li>Calcul d'émargement : 12 716 vacations, 385 agents, 21 profils de rémunération, plages d'heures de nuit paramétrées par client. Réconciliation triple source avec arbitrage manuel en interface.</li>
@@ -810,7 +939,7 @@ section{position:relative}
              onerror="this.remove()">
       </div>
       <div class="rv">
-        <span class="eyebrow">PROFIL</span>
+        <h2 class="eyebrow">PROFIL</h2>
         <p class="about__lead" style="margin-top:28px">
           <strong>Mon métier n'est pas d'écrire le code</strong> : je cadre le besoin, j'assemble les briques
           existantes, je fais produire le code par des agents et je le recette moi-même. Ma méthode tient en
@@ -875,7 +1004,7 @@ section{position:relative}
 
     <div class="skills rv">
       <div class="skills__col">
-        <h4>Automatisation &amp; IA</h4>
+        <h3>Automatisation &amp; IA</h3>
         <ul class="tags">
           <li>n8n auto-hébergé</li><li>MCP</li><li>API Claude</li><li>API Gemini</li><li>RAG</li>
           <li>Pinecone</li><li>OCR par LLM</li><li>Prompt engineering</li><li>Claude Code</li>
@@ -883,7 +1012,7 @@ section{position:relative}
         </ul>
       </div>
       <div class="skills__col">
-        <h4>Intégration, données, exploitation</h4>
+        <h3>Intégration, données, exploitation</h3>
         <ul class="tags">
           <li>API REST</li><li>OAuth2</li><li>Microsoft Graph</li><li>Scraping authentifié</li>
           <li>Bright Data</li><li>Apify</li><li>Apollo</li><li>PostgreSQL</li><li>Supabase</li>
@@ -892,7 +1021,7 @@ section{position:relative}
         </ul>
       </div>
       <div class="skills__col">
-        <h4>Métier &amp; gestion de projet</h4>
+        <h3>Métier &amp; gestion de projet</h3>
         <ul class="tags">
           <li>Paie &amp; cotisations</li><li>DSN</li><li>DPAE</li><li>PAS</li><li>CCN intérim</li>
           <li>Gestion des temps</li><li>Conformité aéroportuaire</li><li>Cadrage</li>
@@ -953,9 +1082,16 @@ section{position:relative}
 
 </main>
 
+<!-- Le compagnon : il se balade en bas de page et commente la section lue -->
+<div class="buddy" id="buddy" aria-hidden="true">
+  <div class="buddy__bubble" id="buddy-bubble"></div>
+  <div class="buddy__ping" id="buddy-ping">!</div>
+  <canvas class="buddy__c" id="buddy-canvas" width="40" height="24"></canvas>
+</div>
+
 <footer class="footer">
   <div class="footer__in">
-    <span>© <span id="year">2026</span> LINÉO BIRIBIN — TOUS DROITS RÉSERVÉS</span>
+    <span>© <span id="year">2026</span> LINÉO BIRIBIN — TOUS DROITS RÉSERVÉS · <a href="./">REVOIR L'INTRO</a></span>
     <span>NOGENT-SUR-MARNE (94) · FRANCE ENTIÈRE · REMOTE OU PRÉSENTIEL</span>
   </div>
 </footer>
@@ -970,8 +1106,20 @@ section{position:relative}
     iris.classList.add('open');
     setTimeout(function(){ iris.setAttribute('data-done',''); }, reduce ? 0 : 950);
   }
-  if (reduce) { openIris(); }
-  else { window.addEventListener('load', function(){ setTimeout(openIris, 260); }); }
+  window.__openIris = openIris;                    // l'intro pixel-art appelle ceci en sortant
+  if (reduce || !window.__INTRO__) {
+    if (reduce) openIris();
+    else window.addEventListener('load', function(){ setTimeout(openIris, 260); });
+  }
+  /* Garde-fou : si l'intro echoue ou tarde, le site s'ouvre quand meme. */
+  setTimeout(function(){
+    if (!iris.hasAttribute('data-done')) {
+      var intro = document.getElementById('intro');
+      if (intro) intro.remove();
+      document.documentElement.classList.remove('intro-lock');
+      openIris();
+    }
+  }, 14000);
 
   /* ---------- Iris wipe on in-page navigation ---------- */
   function irisTo(hash){
