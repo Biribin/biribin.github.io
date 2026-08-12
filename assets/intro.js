@@ -712,6 +712,17 @@
     blitBig(g, sprite(dir, CYCLE[frame % 4]), x, y, flip);
   }
 
+  // La plante passe devant le lit. Les scenes qui repeignent le lit par-dessus
+  // le decor doivent donc la repasser ensuite, sinon son feuillage est tronque.
+  function houseplant(g) {
+    px(g, 292, 114, 16, 12, I.pot2);
+    px(g, 293, 115, 14, 10, '#8a4a2c');
+    disc(g, 300, 106, 8, I.plantB);
+    disc(g, 299, 104, 6, I.plant);
+    disc(g, 297, 102, 4, I.plantA);
+    px(g, 300, 108, 1, 7, I.plantB);
+  }
+
   function buildInterior() {
     var g = int1.x, f = int2.x;
     g.clearRect(0, 0, W, H); f.clearRect(0, 0, W, H);
@@ -872,13 +883,7 @@
     px(g, 293, 36, 7, 7, I.plantA);
     px(g, 303, 34, 6, 9, I.pillowB);
 
-    // ------------------------------------------------- plante (en avant-plan)
-    px(g, 292, 114, 16, 12, I.pot2);
-    px(g, 293, 115, 14, 10, '#8a4a2c');
-    disc(g, 300, 106, 8, I.plantB);
-    disc(g, 299, 104, 6, I.plant);
-    disc(g, 297, 102, 4, I.plantA);
-    px(g, 300, 108, 1, 7, I.plantB);
+    houseplant(g);                                   // avant-plan : devant le lit
 
     // ----------------------------------------------------------------- tapis
     px(g, 134, 112, 78, 14, I.rugB);
@@ -984,6 +989,7 @@
         px(g, 289, 73, 14, 6, SP.h);
         px(g, 290, 74, 11, 4, SP.H);
         px(g, 298, 76, 5, 4, SP.s);
+        houseplant(g);                   // le lit vient d'etre repeint par-dessus
         zzz(g, 306, 62, Math.floor(t / 700) % 3);
         g.fillStyle = I.dark;
         g.fillRect(0, 0, W, H);
