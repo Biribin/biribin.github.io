@@ -603,13 +603,14 @@
     px(g, rx + 1, ry + rh - 3, rw - 2, 1, C.roofOB);
 
     emblem(g, x + Math.floor(w / 2), y + 1);
-    // enseigne : large, avec le nom bien centré et de la marge de chaque côté
-    var sw = 56, sx2 = x + Math.floor(w / 2) - sw / 2, sy2 = y + 18;
+    // Enseigne : cale entre la vitrine et la porte, qui est dessinee apres et
+    // rognerait le panneau. 1 px de mur de chaque cote, le nom ne touche rien.
+    var sw = 56, sx2 = x + Math.floor(w / 2) - sw / 2, sy2 = y + 16;
     var txt = 'LINÉO', txtW = txt.length * 5 - 1;
-    px(g, sx2 - 1, sy2 - 1, sw + 2, 13, C.outline);
-    px(g, sx2, sy2, sw, 11, C.signBg);
+    px(g, sx2 - 1, sy2 - 1, sw + 2, 11, C.outline);
+    px(g, sx2, sy2, sw, 9, C.signBg);
     px(g, sx2, sy2, sw, 1, '#fff8dc');
-    tinyText(g, txt, sx2 + Math.round((sw - txtW) / 2), sy2 + 4, C.signInk);
+    tinyText(g, txt, sx2 + Math.round((sw - txtW) / 2), sy2 + 3, C.signInk);
 
     var dw = 18, dx = x + Math.floor(w / 2) - dw / 2, dh = 14;
     px(g, dx - 1, y + h - dh - 1, dw + 2, dh + 1, C.outline);
