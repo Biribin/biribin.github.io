@@ -349,9 +349,13 @@
       if (talkUntil && now > talkUntil) { el.classList.remove('talk'); talkUntil = 0; }
 
       if (mode === 'walk') {
+        // la zone marchable peut avoir retreci (fenetre reduite) : on recale la
+        // cible dans les bornes courantes, sinon il pietine contre le bord droit.
+        var mx = maxX();
+        if (tx > mx) tx = mx; else if (tx < 16) tx = 16;
         var d = tx - x, move = SPEED * dt / 1000;
         if (Math.abs(d) <= move) { x = tx; arrive(); }
-        else x += (d > 0 ? 1 : -1) * move;
+        else { dir = d > 0 ? 1 : -1; x += dir * move; }
         tFrame += dt;
         if (tFrame > 165) { tFrame = 0; frame++; }
       } else {
@@ -941,6 +945,7 @@
     bureau: {
       x: 234, dir: 'sit', sitY: 100, label: 'au bureau',
       line: 'Je déploie un workflow.',
+      focus: { x: 255, y: 66 },      // le moniteur : cible du zoom final (on plonge dans l'ecran)
       anim: function (g, t) {
         px(g, 246, 58, 18, 16, I.mon);
         var n = [[249, 62], [255, 60], [255, 67], [260, 64]];
@@ -1067,8 +1072,10 @@
     else px(g, hx + 12, feetY - 22 + dy, 8, 5, SP.j);
   }
 
+  // Fin d'intro : on termine au bureau, pour plonger dans l'ecran (raccord avec le site).
+  // ?act=... force une autre activite (debug / variete).
   var actKey = qs.get('act');
-  if (!ACTS[actKey]) actKey = pick(Object.keys(ACTS));
+  if (!ACTS[actKey]) actKey = 'bureau';
   var ACT = ACTS[actKey];
 
   /* ==========================================================================
@@ -1102,7 +1109,7 @@
   P.cutEnd = P.doorEnd + 220;
   P.iwalkEnd = P.cutEnd + 900;
   P.actEnd = P.iwalkEnd + 2400;
-  P.end = P.actEnd + 720;
+  P.end = P.actEnd + 2100;        // plongee dans l'ecran : lente et cinematographique
 
   function extHero(tw) {
     for (var i = 0; i < route.length; i++) {
@@ -1237,10 +1244,18 @@
 
     var z = t - P.actEnd;
     if (z > 0) {
-      var k2 = Math.min(1, z / (P.end - P.actEnd)), e = k2 * k2 * (3 - 2 * k2);
-      view.style.transformOrigin = (hx / W * 100) + '% ' + (hy / H * 100) + '%';
-      view.style.transform = 'scale(' + (1 + 2.2 * e) + ')';
-      root.style.setProperty('--flash', String(Math.max(0, (k2 - 0.5) / 0.5)));
+      var k2 = Math.min(1, z / (P.end - P.actEnd));
+      var e = k2 * k2 * k2;                      // ease-in cubique : depart tres retenu puis aspiration brutale
+      // on plonge DANS l'ecran : on centre la camera sur le moniteur et on zoome
+      // dedans jusqu'a ce qu'il remplisse le cadre (fx,fy = point vise, en fraction)
+      var fx = (ACT.focus ? ACT.focus.x : hx) / W, fy = (ACT.focus ? ACT.focus.y : hy) / H;
+      var S = 1 + 8.5 * e;                       // l'ecran finit par occuper tout le cadre
+      var tx = (0.5 - fx) * e * 100, ty = (0.5 - fy) * e * 100;   // le moniteur derive vers le centre
+      view.style.transformOrigin = (fx * 100) + '% ' + (fy * 100) + '%';
+      view.style.transform = 'translate(' + tx + '%,' + ty + '%) scale(' + S + ')';
+      // fondu sombre calé sur la progression du zoom (pas le temps) : il ne s'enclenche
+      // qu'une fois bien enfoncé dans l'écran, quel que soit l'easing
+      root.style.setProperty('--flash', String(Math.max(0, (e - 0.72) / 0.28)));
       boxEl.classList.remove('on');
     }
   }

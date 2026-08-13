@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Automatisation MCP — séquence vidéo</title>
+<style>
+  :root{ --bg:#050607; --ui:#0f1013; --line:rgba(255,255,255,.1); --txt:#fff; --dim:#8b8b96;
+         --accent:#3B82F6; --green:#31c48d; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+  .wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px}
+  .stage{width:min(100%,1180px);aspect-ratio:16/9;border-radius:14px;overflow:hidden;
+    border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.6);background:#000}
+  canvas{display:block;width:100%;height:100%}
+  .bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center}
+  button{font:inherit;font-size:14px;font-weight:600;border-radius:10px;padding:11px 18px;cursor:pointer;
+    border:1px solid var(--line);background:#16171b;color:#e6e6ee;transition:.18s}
+  button:hover{border-color:#3a3b44;color:#fff}
+  button.primary{background:var(--accent);border-color:transparent;color:#fff;
+    box-shadow:0 10px 26px rgba(59,130,246,.3)}
+  button.primary:hover{filter:brightness(1.07)}
+  button:disabled{opacity:.5;cursor:default}
+  .hint{font-size:12.5px;color:var(--dim);text-align:center;max-width:640px;line-height:1.6}
+  .rec{display:inline-flex;align-items:center;gap:8px}
+  .rec i{width:9px;height:9px;border-radius:50%;background:#ff4d4d;animation:b .8s infinite}
+  @keyframes b{50%{opacity:.2}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage"><canvas id="c" width="1920" height="1080"></canvas></div>
+  <div class="bar">
+    <button class="primary" id="rec">Exporter la vidéo (WebM)</button>
+    <button id="replay">Rejouer</button>
+    <span class="hint" id="status">Boucle automatique · 13 s</span>
+  </div>
+  <p class="hint">L'export enregistre exactement un cycle en 1920×1080. Le fichier <b>.webm</b> se télécharge automatiquement à la fin — convertible en MP4 si votre montage l'exige.</p>
+</div>
+
+<script>
+const c = document.getElementById('c'), x = c.getContext('2d');
+const W = 1920, H = 1080;
+
+/* ---------- palette (alignée sur le design system du site) ---------- */
+const CO = {
+  bg:'#050505', grid:'rgba(255,255,255,.055)', panel:'#0d0e11',
+  node:'#232429', nodeTop:'#2c2d33', border:'rgba(255,255,255,.13)',
+  edge:'#4c4d57', txt:'#ffffff', dim:'#8a8b95',
+  accent:'#3B82F6', pink:'#ea4b71', violet:'#7c6bf5', green:'#31c48d', teal:'#3fc2a8'
+};
+
+/* ---------- helpers ---------- */
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const seg=(t,a,b)=>clamp((t-a)/(b-a));
+const easeOut=p=>1-Math.pow(1-p,3);
+const easeInOut=p=>p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;
+const lerp=(a,b,p)=>a+(b-a)*p;
+
+function rr(ctx,X,Y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(X+r,Y); ctx.arcTo(X+w,Y,X+w,Y+h,r); ctx.arcTo(X+w,Y+h,X,Y+h,r);
+  ctx.arcTo(X,Y+h,X,Y,r); ctx.arcTo(X,Y,X+w,Y,r); ctx.closePath();
+}
+function text(s,X,Y,{size=20,weight=500,color=CO.txt,align='center',font='Inter'}={}){
+  x.save(); x.fillStyle=color; x.textAlign=align; x.textBaseline='middle';
+  x.font=`${weight} ${size}px ${font}, -apple-system, Segoe UI, Roboto, sans-serif`;
+  x.fillText(s,X,Y); x.restore();
+}
+const bez=(p0,p1,p2,p3,t)=>{
+  const u=1-t;
+  return { x:u*u*u*p0.x+3*u*u*t*p1.x+3*u*t*t*p2.x+t*t*t*p3.x,
+           y:u*u*u*p0.y+3*u*u*t*p1.y+3*u*t*t*p2.y+t*t*t*p3.y };
+};
+
+/* ---------- graph model ---------- */
+const NW=132, NH=132;                     // main node box
+const TW=104, TH=104;                     // tool node box
+const NODES = {
+  intake : {x:300,  y:470, label:'Demande reçue',    sub:'Formulaire · e-mail', icon:'inbox',  color:CO.pink },
+  mcp    : {x:760,  y:470, label:'Agent MCP',        sub:'Exécution des actions', icon:'mcp',  color:CO.violet, big:true },
+  doc    : {x:1250, y:330, label:'Document généré',  sub:'PDF prêt à envoyer',  icon:'doc',    color:CO.teal },
+  notify : {x:1250, y:620, label:'Client informé',   sub:'E-mail confirmé',     icon:'mail',   color:CO.violet },
+  log    : {x:1640, y:470, label:'Suivi mis à jour', sub:'Historique complet',  icon:'check',  color:CO.green }
+};
+const TOOLS = {
+  t1:{x:610, y:790, label:'Données',   icon:'db'},
+  t2:{x:760, y:790, label:'Fichiers',  icon:'folder'},
+  t3:{x:910, y:790, label:'Messagerie',icon:'send'}
+};
+const halfW = n => (n.big?NW+26:NW)/2;
+
+function port(n,side,dy=0){ return {x:n.x+(side==='out'?halfW(n):-halfW(n)), y:n.y+dy}; }
+
+const EDGES = [
+  {id:'e1', a:port(NODES.intake,'out'), b:port(NODES.mcp,'in')},
+  {id:'e2', a:port(NODES.mcp,'out'),    b:port(NODES.doc,'in')},
+  {id:'e3', a:port(NODES.mcp,'out'),    b:port(NODES.notify,'in')},
+  {id:'e4', a:port(NODES.doc,'out'),    b:port(NODES.log,'in',-16)},
+  {id:'e5', a:port(NODES.notify,'out'), b:port(NODES.log,'in',16)}
+];
+EDGES.forEach(e=>{
+  const dx=Math.max(70,Math.abs(e.b.x-e.a.x)*.45);
+  e.c1={x:e.a.x+dx,y:e.a.y}; e.c2={x:e.b.x-dx,y:e.b.y};
+});
+
+/* ---------- icons (vector, drawn at 0,0 centred, size ~44) ---------- */
+function icon(kind,cx,cy,s,color){
+  x.save(); x.translate(cx,cy); x.scale(s/48,s/48);
+  x.strokeStyle=color; x.lineWidth=2.6; x.lineCap='round'; x.lineJoin='round'; x.fillStyle='none';
+  x.beginPath();
+  switch(kind){
+    case 'inbox':
+      x.moveTo(-18,-4); x.lineTo(-18,16); x.lineTo(18,16); x.lineTo(18,-4);
+      x.moveTo(-18,-4); x.lineTo(-11,-16); x.lineTo(11,-16); x.lineTo(18,-4);
+      x.moveTo(-18,-4); x.lineTo(-7,-4); x.lineTo(-4,2); x.lineTo(4,2); x.lineTo(7,-4); x.lineTo(18,-4);
+      break;
+    case 'mcp':
+      x.moveTo(-16,10); x.lineTo(0,-16); x.lineTo(16,10); x.closePath();
+      x.moveTo(-9,10); x.lineTo(0,-6); x.lineTo(9,10);
+      x.moveTo(-20,17); x.lineTo(20,17);
+      break;
+    case 'doc':
+      x.moveTo(-13,-18); x.lineTo(6,-18); x.lineTo(14,-9); x.lineTo(14,18); x.lineTo(-13,18); x.closePath();
+      x.moveTo(6,-18); x.lineTo(6,-9); x.lineTo(14,-9);
+      x.moveTo(-7,4); x.lineTo(8,4); x.moveTo(-7,11); x.lineTo(3,11);
+      break;
+    case 'mail':
+      x.moveTo(-17,-11); x.lineTo(17,-11); x.lineTo(17,12); x.lineTo(-17,12); x.closePath();
+      x.moveTo(-17,-10); x.lineTo(0,3); x.lineTo(17,-10);
+      break;
+    case 'check':
+      x.arc(0,0,17,0,Math.PI*2); x.moveTo(-8,1); x.lineTo(-2,7); x.lineTo(9,-6);
+      break;
+    case 'db':
+      x.ellipse(0,-11,15,6,0,0,Math.PI*2);
+      x.moveTo(-15,-11); x.lineTo(-15,11); x.bezierCurveTo(-15,17,15,17,15,11); x.lineTo(15,-11);
+      x.moveTo(-15,0); x.bezierCurveTo(-15,6,15,6,15,0);
+      break;
+    case 'folder':
+      x.moveTo(-16,-11); x.lineTo(-4,-11); x.lineTo(0,-5); x.lineTo(16,-5); x.lineTo(16,13); x.lineTo(-16,13); x.closePath();
+      break;
+    case 'send':
+      x.moveTo(-16,0); x.lineTo(16,-13); x.lineTo(6,16); x.lineTo(1,4); x.closePath();
+      x.moveTo(1,4); x.lineTo(16,-13);
+      break;
+  }
+  x.stroke(); x.restore();
+}
+
+/* ---------- static chrome ---------- */
+function drawBackground(){
+  x.fillStyle=CO.bg; x.fillRect(0,0,W,H);
+  x.fillStyle=CO.grid;
+  for(let gx=40;gx<W;gx+=30) for(let gy=110;gy<H-70;gy+=30){ x.fillRect(gx,gy,2,2); }
+  const g=x.createRadialGradient(W/2,H*.45,200,W/2,H*.45,1150);
+  g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.6)');
+  x.fillStyle=g; x.fillRect(0,0,W,H);
+}
+function drawTopBar(state){
+  x.fillStyle=CO.panel; x.fillRect(0,0,W,84);
+  x.fillStyle='rgba(255,255,255,.08)'; x.fillRect(0,83,W,1);
+  // mark
+  x.save(); rr(x,48,26,32,32,9); x.fillStyle=CO.accent; x.fill(); x.restore();
+  icon('mcp',64,42,22,'#fff');
+  text('Traitement automatisé des demandes clients',98,43,{size:22,weight:650,align:'left'});
+  // status pill
+  const running = state.running;
+  const label = running?'Exécution en cours':'Automatisation active';
+  x.save(); x.font='600 16px Inter, sans-serif';
+  const w=x.measureText(label).width+62; x.restore();
+  rr(x,W-48-w,26,w,32,9); x.fillStyle='#191a1f'; x.fill();
+  x.strokeStyle='rgba(255,255,255,.1)'; x.lineWidth=1; x.stroke();
+  const col = running?CO.accent:CO.green;
+  x.beginPath(); x.arc(W-48-w+22,42,6,0,Math.PI*2);
+  x.fillStyle=col; x.shadowColor=col; x.shadowBlur=12; x.fill(); x.shadowBlur=0;
+  text(label,W-48-w+38,43,{size:16,weight:600,color:'#d9d9e2',align:'left'});
+}
+
+/* ---------- nodes ---------- */
+function drawNode(n,{glow=0,done=0,spin=0}={}){
+  const w=(n.big?NW+52:NW), h=(n.big?NH:NH), X=n.x-w/2, Y=n.y-h/2;
+  x.save();
+  // glow halo
+  if(glow>0){
+    x.shadowColor=`rgba(234,75,113,${.55*glow})`; x.shadowBlur=48*glow;
+  } else if(done>0){
+    x.shadowColor=`rgba(49,196,141,${.28*done})`; x.shadowBlur=26*done;
+  } else { x.shadowColor='rgba(0,0,0,.55)'; x.shadowBlur=24; x.shadowOffsetY=10; }
+  const g=x.createLinearGradient(0,Y,0,Y+h);
+  g.addColorStop(0,CO.nodeTop); g.addColorStop(1,CO.node);
+  rr(x,X,Y,w,h,22); x.fillStyle=g; x.fill(); x.restore();
+
+  // border
+  rr(x,X,Y,w,h,22);
+  x.lineWidth = glow>0?2.4:1.6;
+  x.strokeStyle = glow>0 ? `rgba(234,75,113,${.35+.65*glow})`
+                : done>0 ? `rgba(49,196,141,${.25+.35*done})`
+                : CO.border;
+  x.stroke();
+
+  // rotating ring for MCP while working
+  if(spin>0){
+    x.save(); x.translate(n.x,n.y);
+    x.rotate(spin*Math.PI*2);
+    x.beginPath(); x.arc(0,0,w/2+16,0,Math.PI*1.15);
+    x.strokeStyle=`rgba(124,107,245,${.75})`; x.lineWidth=3; x.lineCap='round';
+    x.shadowColor='rgba(124,107,245,.9)'; x.shadowBlur=16; x.stroke(); x.restore();
+  }
+
+  icon(n.icon,n.x,n.y-6,52,n.color);
+
+  // ports
+  const drawPort=(px,py,on)=>{ x.beginPath(); x.arc(px,py,7,0,Math.PI*2);
+    x.fillStyle='#15161a'; x.fill(); x.lineWidth=2.4;
+    x.strokeStyle=on?CO.green:'#63646f'; x.stroke(); };
+  drawPort(X,n.y,done>.5); drawPort(X+w,n.y,done>.5);
+
+  // labels
+  text(n.label,n.x,n.y+h/2+34,{size:21,weight:650});
+  text(n.sub,n.x,n.y+h/2+62,{size:16,weight:500,color:CO.dim});
+}
+
+function drawTool(t,{glow=0}={}){
+  const X=t.x-TW/2, Y=t.y-TH/2;
+  x.save();
+  x.shadowColor = glow>0?`rgba(124,107,245,${.5*glow})`:'rgba(0,0,0,.5)';
+  x.shadowBlur = glow>0?34*glow:16;
+  rr(x,X,Y,TW,TH,18); x.fillStyle='#1e1f24'; x.fill(); x.restore();
+  rr(x,X,Y,TW,TH,18); x.lineWidth=1.5;
+  x.strokeStyle= glow>0?`rgba(124,107,245,${.3+.6*glow})`:'rgba(255,255,255,.1)'; x.stroke();
+  icon(t.icon,t.x,t.y,40,glow>0?'#cfc7ff':'#8f90a0');
+  text(t.label,t.x,t.y+TH/2+26,{size:15,weight:550,color:CO.dim});
+}
+
+/* ---------- edges ---------- */
+function drawEdge(e,p,lit){
+  // base
+  x.beginPath(); x.moveTo(e.a.x,e.a.y);
+  x.bezierCurveTo(e.c1.x,e.c1.y,e.c2.x,e.c2.y,e.b.x,e.b.y);
+  x.lineWidth=3; x.lineCap='round';
+  x.strokeStyle = lit? 'rgba(120,180,155,.55)' : CO.edge;
+  x.stroke();
+  if(p<=0||p>=1.001) return;
+  // comet
+  const tail=.28, from=Math.max(0,p-tail);
+  x.save();
+  x.beginPath();
+  const steps=26;
+  for(let i=0;i<=steps;i++){
+    const t=from+(p-from)*(i/steps), pt=bez(e.a,e.c1,e.c2,e.b,t);
+    i?x.lineTo(pt.x,pt.y):x.moveTo(pt.x,pt.y);
+  }
+  const s=bez(e.a,e.c1,e.c2,e.b,from), en=bez(e.a,e.c1,e.c2,e.b,p);
+  const grd=x.createLinearGradient(s.x,s.y,en.x,en.y);
+  grd.addColorStop(0,'rgba(59,130,246,0)'); grd.addColorStop(1,'rgba(191,219,254,1)');
+  x.strokeStyle=grd; x.lineWidth=4.5; x.shadowColor='rgba(59,130,246,.9)'; x.shadowBlur=18; x.stroke();
+  x.beginPath(); x.arc(en.x,en.y,6,0,Math.PI*2); x.fillStyle='#fff';
+  x.shadowColor='rgba(255,255,255,.9)'; x.shadowBlur=20; x.fill();
+  x.restore();
+}
+function drawToolLink(t,glow){
+  const a={x:t.x,y:t.y-TH/2}, b={x:NODES.mcp.x + (t.x-NODES.mcp.x)*.35, y:NODES.mcp.y+NH/2};
+  x.save(); x.setLineDash([7,9]); x.lineWidth=2.4; x.lineCap='round';
+  x.strokeStyle = glow>0?`rgba(124,107,245,${.35+.6*glow})`:'rgba(255,255,255,.16)';
+  if(glow>0){ x.shadowColor='rgba(124,107,245,.8)'; x.shadowBlur=14; }
+  x.beginPath(); x.moveTo(a.x,a.y);
+  x.bezierCurveTo(a.x,a.y-60,b.x,b.y+60,b.x,b.y); x.stroke(); x.restore();
+}
+
+/* ---------- execute button ---------- */
+const BTN={x:960,y:952,w:300,h:62};
+function drawButton(state){
+  const {x:bx,y:by,w,h}=BTN, X=bx-w/2, Y=by-h/2;
+  const press = state.press;                    // 0..1
+  const sc = 1-press*0.035;
+  x.save(); x.translate(bx,by); x.scale(sc,sc); x.translate(-bx,-by);
+  const halo = state.running?0:(0.5+0.5*Math.sin(state.time*3.2));
+  x.shadowColor=`rgba(59,130,246,${.3+.35*halo})`; x.shadowBlur=30+26*halo; x.shadowOffsetY=10;
+  rr(x,X,Y,w,h,14); x.fillStyle= state.running?'#33343b':CO.accent; x.fill();
+  x.shadowBlur=0; x.shadowOffsetY=0;
+  const lbl = state.running?'Exécution…':'Exécuter le workflow';
+  // play glyph
+  x.save(); x.translate(X+34,by);
+  if(state.running){
+    x.rotate(state.time*4); x.beginPath(); x.arc(0,0,10,0,Math.PI*1.4);
+    x.strokeStyle='#e6e6ee'; x.lineWidth=3; x.lineCap='round'; x.stroke();
+  } else {
+    x.beginPath(); x.moveTo(-6,-9); x.lineTo(10,0); x.lineTo(-6,9); x.closePath();
+    x.fillStyle='#fff'; x.fill();
+  }
+  x.restore();
+  text(lbl,X+58,by+1,{size:20,weight:700,align:'left',color:state.running?'#d9d9e2':'#fff'});
+  x.restore();
+
+  if(state.ripple>0 && state.ripple<1){
+    const r=30+120*easeOut(state.ripple);
+    x.beginPath(); x.arc(bx,by,r,0,Math.PI*2);
+    x.strokeStyle=`rgba(59,130,246,${.6*(1-state.ripple)})`; x.lineWidth=3; x.stroke();
+  }
+}
+
+/* ---------- side panel ---------- */
+function drawPanel(open,prog,files,toast){
+  if(open<=0) return;
+  const w=520, X=W-w*easeInOut(open);
+  x.save();
+  x.shadowColor='rgba(0,0,0,.6)'; x.shadowBlur=60; x.shadowOffsetX=-20;
+  x.fillStyle='#101115'; x.fillRect(X,84,w,H-84);
+  x.restore();
+  x.fillStyle='rgba(255,255,255,.09)'; x.fillRect(X,84,1,H-84);
+
+  const px=X+40;
+  text('Livrables',px,150,{size:22,weight:650,align:'left'});
+  text("Générés par l'agent · aucune intervention",px,182,{size:15,color:CO.dim,align:'left'});
+
+  // document preview
+  const dy=225, dw=w-80, dh=250;
+  x.save(); x.shadowColor='rgba(0,0,0,.55)'; x.shadowBlur=30; x.shadowOffsetY=14;
+  rr(x,px,dy,dw,dh,14); x.fillStyle='#fbfbf8'; x.fill(); x.restore();
+  rr(x,px,dy+0,dw,52,14); x.fillStyle='#f1f1ec'; x.fill();
+  rr(x,px+22,dy+14,26,26,7); x.fillStyle=CO.pink; x.fill();
+  icon('doc',px+35,dy+27,16,'#fff');
+  text('Récapitulatif client',px+60,dy+27,{size:16,weight:700,color:'#1b1b1f',align:'left'});
+  text('PDF · 2 pages',px+dw-24,dy+27,{size:13,color:'#77777f',align:'right'});
+  // body lines (reveal with progress)
+  const rows=[['Éléments traités','24'],['Temps machine','3,4 s'],['Contrôles passés','12 / 12'],['Statut','Validé']];
+  rows.forEach((r,i)=>{
+    const rp=clamp((prog-i*0.18)/0.3);
+    if(rp<=0) return;
+    x.save(); x.globalAlpha=rp;
+    const ry=dy+92+i*38;
+    text(r[0],px+24,ry,{size:15,color:'#4b4b53',align:'left'});
+    text(r[1],px+dw-24,ry,{size:15,weight:700,color:i===3?'#0f7a52':'#1b1b1f',align:'right'});
+    x.fillStyle='#eaeae3'; x.fillRect(px+24,ry+18,dw-48,1);
+    x.restore();
+  });
+
+  // progress
+  const by=dy+dh+56;
+  text(prog>=1?'Documents prêts':'Préparation des documents',px,by-22,{size:15,color:CO.dim,align:'left'});
+  text(Math.round(prog*100)+' %',px+dw,by-22,{size:15,weight:700,align:'right'});
+  rr(x,px,by,dw,9,5); x.fillStyle='#1e1f26'; x.fill();
+  if(prog>0){
+    rr(x,px,by,Math.max(9,dw*prog),9,5);
+    const g=x.createLinearGradient(px,0,px+dw,0);
+    if(prog>=1){ g.addColorStop(0,CO.green); g.addColorStop(1,'#66e3b3'); x.shadowColor='rgba(49,196,141,.7)';}
+    else { g.addColorStop(0,CO.pink); g.addColorStop(1,'#5b8bff'); x.shadowColor='rgba(59,130,246,.7)'; }
+    x.shadowBlur=16; x.fillStyle=g; x.fill(); x.shadowBlur=0;
+  }
+
+  // file rows
+  const F=[['recapitulatif.pdf','PDF · 248 Ko',CO.pink],['donnees_traitees.xlsx','Tableur · 96 Ko',CO.green]];
+  F.forEach((f,i)=>{
+    const ap=clamp(files[i]);
+    if(ap<=0) return;
+    const fy=by+46+i*84, off=(1-easeOut(ap))*16;
+    x.save(); x.globalAlpha=ap;
+    rr(x,px,fy+off,dw,66,13); x.fillStyle='#16171c'; x.fill();
+    x.strokeStyle='rgba(255,255,255,.09)'; x.lineWidth=1; x.stroke();
+    rr(x,px+14,fy+off+13,40,40,11); x.fillStyle='#1f2027'; x.fill();
+    icon(i?'db':'doc',px+34,fy+off+33,24,f[2]);
+    text(f[0],px+70,fy+off+26,{size:16,weight:600,align:'left'});
+    text(f[1],px+70,fy+off+47,{size:13.5,color:CO.dim,align:'left'});
+    // download arrow micro-bounce
+    const bp=clamp((ap-0.35)/0.65), bo=-10*(1-easeOut(bp))+Math.sin(bp*Math.PI)*-4;
+    x.save(); x.translate(px+dw-38,fy+off+33+bo); x.globalAlpha=ap*bp;
+    x.strokeStyle=CO.green; x.lineWidth=2.6; x.lineCap='round'; x.lineJoin='round';
+    x.beginPath(); x.moveTo(0,-10); x.lineTo(0,5); x.moveTo(-6,-1); x.lineTo(0,5); x.lineTo(6,-1);
+    x.moveTo(-9,10); x.lineTo(9,10); x.stroke(); x.restore();
+    x.restore();
+  });
+  // toast
+  if(toast>0){
+    const tw=440, th=76, tx=W-tw-40, ty=H-th-40+ (1-easeOut(clamp(toast*3)))*18;
+    x.save(); x.globalAlpha=clamp(toast*3)*clamp((1-toast)*6+.15,0,1);
+    x.shadowColor='rgba(0,0,0,.6)'; x.shadowBlur=40; x.shadowOffsetY=14;
+    rr(x,tx,ty,tw,th,14); x.fillStyle='#0e1a15'; x.fill(); x.restore();
+    x.save(); x.globalAlpha=clamp(toast*3)*clamp((1-toast)*6+.15,0,1);
+    rr(x,tx,ty,tw,th,14); x.strokeStyle='rgba(49,196,141,.45)'; x.lineWidth=1.5; x.stroke();
+    rr(x,tx,ty,4,th,2); x.fillStyle=CO.green; x.fill();
+    x.beginPath(); x.arc(tx+44,ty+th/2,18,0,Math.PI*2); x.fillStyle='rgba(49,196,141,.15)'; x.fill();
+    icon('check',tx+44,ty+th/2,26,CO.green);
+    text('Workflow terminé',tx+76,ty+28,{size:17,weight:700,align:'left'});
+    text('2 documents livrés · client notifié · 0 erreur',tx+76,ty+52,{size:14,color:'#8fb3a4',align:'left'});
+    x.restore();
+  }
+}
+
+/* ---------- cursor ---------- */
+function drawCursor(p){
+  if(!p) return;
+  x.save(); x.translate(p.x,p.y);
+  x.shadowColor='rgba(0,0,0,.6)'; x.shadowBlur=14; x.shadowOffsetY=4;
+  x.beginPath();
+  x.moveTo(0,0); x.lineTo(0,26); x.lineTo(6.5,20.5); x.lineTo(11,30); x.lineTo(16,27.5);
+  x.lineTo(11.5,18.5); x.lineTo(20,17.5); x.closePath();
+  x.fillStyle='#fff'; x.fill(); x.lineWidth=1.6; x.strokeStyle='rgba(0,0,0,.5)'; x.stroke();
+  x.restore();
+}
+
+/* ============================================================
+   TIMELINE  (seconds)
+   ============================================================ */
+const DUR = 13.0;
+function frame(t){
+  const st = {time:t, running:false, press:0, ripple:0};
+
+  // cursor path: enters bottom-right, arrives on button at 1.6s
+  const cp0={x:1780,y:1060}, cp1={x:1480,y:1010}, cp2={x:1180,y:1010}, cp3={x:BTN.x+26,y:BTN.y-4};
+  let cursor=null;
+  if(t<3.6){
+    const p=easeInOut(seg(t,0.15,1.55));
+    cursor = bez(cp0,cp1,cp2,cp3,p);
+    if(t>2.9){ const f=seg(t,2.9,3.6); cursor.x+=f*90; cursor.y+=f*120; }
+  }
+  st.press = t>=1.6&&t<1.85 ? 1 : 0;
+  st.ripple = seg(t,1.68,2.5);
+  st.running = t>=1.75 && t<10.4;
+
+  // edge progress
+  const eP = {
+    e1: seg(t,1.95,2.75),
+    e2: seg(t,4.55,5.35),
+    e3: seg(t,4.55,5.35),
+    e4: seg(t,7.6,8.35),
+    e5: seg(t,7.6,8.35)
+  };
+  const nodeState = id=>{
+    switch(id){
+      case 'intake': return {glow: t>=1.85&&t<2.75?1:0, done: t>=2.75?1:0};
+      case 'mcp':    return {glow: t>=2.75&&t<4.6?1:0, done: t>=4.6?1:0,
+                             spin: t>=2.75&&t<4.6? (t-2.75)*0.6 : 0};
+      case 'doc':    return {glow: t>=5.35&&t<7.7?1:0, done: t>=7.7?1:0};
+      case 'notify': return {glow: t>=5.35&&t<7.7?1:0, done: t>=7.7?1:0};
+      case 'log':    return {glow: t>=8.35&&t<9.1?1:0, done: t>=9.1?1:0};
+    }
+  };
+  const toolGlow = k => {
+    const start=3.0+k*0.22;
+    return t>=start&&t<4.5 ? clamp(Math.sin((t-start)*3.2))*0.9+0.1 : 0;
+  };
+
+  const panel = seg(t,5.5,6.15);
+  const prog  = seg(t,6.0,8.2);
+  const files = [seg(t,8.3,8.9), seg(t,8.65,9.25)];
+  const toast = t>=9.4 ? seg(t,9.4,12.6) : 0;
+
+  /* ---- paint ---- */
+  drawBackground();
+
+  EDGES.forEach(e=>drawEdge(e,eP[e.id], eP[e.id]>=1));
+  Object.entries(TOOLS).forEach(([k,tl],i)=>drawToolLink(tl,toolGlow(i)));
+  Object.entries(TOOLS).forEach(([k,tl],i)=>drawTool(tl,{glow:toolGlow(i)}));
+  Object.entries(NODES).forEach(([id,n])=>drawNode(n,nodeState(id)));
+
+  drawButton(st);
+  drawPanel(panel,prog,files,toast);
+  drawTopBar(st);
+  drawCursor(cursor);
+
+  // fade to black at the very end for a clean loop
+  const fade = seg(t,DUR-0.55,DUR);
+  if(fade>0){ x.fillStyle=`rgba(5,5,5,${fade})`; x.fillRect(0,0,W,H); }
+}
+
+/* ---------- loop ---------- */
+let t0=performance.now(), recording=false;
+function tick(now){
+  let t=(now-t0)/1000;
+  if(t>=DUR){ if(recording){ stopRec(); } t0=now; t=0; }
+  frame(t);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+document.getElementById('replay').onclick=()=>{ t0=performance.now(); };
+
+/* ---------- video export ---------- */
+const status=document.getElementById('status'), recBtn=document.getElementById('rec');
+let recorder, chunks=[];
+function pickMime(){
+  return ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']
+    .find(m=>MediaRecorder.isTypeSupported(m)) || '';
+}
+recBtn.onclick=()=>{
+  if(recording) return;
+  const stream=c.captureStream(60);
+  chunks=[];
+  try{ recorder=new MediaRecorder(stream,{mimeType:pickMime(),videoBitsPerSecond:12_000_000}); }
+  catch(e){ status.textContent='Enregistrement non supporté par ce navigateur.'; return; }
+  recorder.ondataavailable=e=>{ if(e.data.size) chunks.push(e.data); };
+  recorder.onstop=()=>{
+    const blob=new Blob(chunks,{type:'video/webm'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='workflow-mcp.webm'; document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},2000);
+    recording=false; recBtn.disabled=false;
+    recBtn.textContent='Exporter la vidéo (WebM)';
+    status.textContent='Vidéo exportée · 13 s · 1920×1080';
+  };
+  t0=performance.now();
+  recorder.start();
+  recording=true; recBtn.disabled=true;
+  recBtn.textContent='Enregistrement…';
+  status.innerHTML='<span class="rec"><i></i>Enregistrement du cycle complet…</span>';
+};
+function stopRec(){ if(recorder && recorder.state==='recording') recorder.stop(); }
+</script>
+</body>
+</html>
