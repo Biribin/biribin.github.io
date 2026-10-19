@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; frame-src 'self'; connect-src 'none'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
 <title>Linéo Biribin · Ingénieur</title>
 <meta name="description" content="Automatisation et IA appliquée, en low-code. Une centaine de workflows n8n en production : paie, DSN, DPAE, facturation, contrats, conformité. 51 workflows open source, 14 serveurs MCP.">
 <meta name="author" content="Linéo Biribin">
@@ -19,14 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@300;400&family=Press+Start+2P&display=swap" rel="stylesheet">
-<script>
-/* Sans JS, ni l'iris ni l'intro ne doivent masquer le site. */
-(function(){
-  document.documentElement.classList.add('js');
-  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  window.__INTRO__ = !reduce && location.search.indexOf('nointro') < 0;
-})();
-</script>
+<script src="assets/boot.js"></script>
 <script src="assets/intro.js" defer></script>
 <style>
 /* ============================================================
@@ -1009,8 +1003,7 @@ html.intro-lock,html.intro-lock body{overflow:hidden;height:100%}
     <div class="about">
       <div class="portrait rv">
         <div class="portrait__fallback" aria-hidden="true">LB</div>
-        <img class="portrait__img" src="assets/portrait.jpg" alt="Portrait de Linéo Biribin"
-             onerror="this.remove()">
+        <img class="portrait__img" src="assets/portrait.jpg" alt="Portrait de Linéo Biribin">
       </div>
       <div class="rv">
         <h2 class="eyebrow">PROFIL</h2>
@@ -1170,87 +1163,6 @@ html.intro-lock,html.intro-lock body{overflow:hidden;height:100%}
   </div>
 </footer>
 
-<script>
-(function(){
-  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  /* ---------- Iris wipe on load ---------- */
-  var iris = document.getElementById('iris');
-  function openIris(){
-    iris.classList.add('open');
-    setTimeout(function(){ iris.setAttribute('data-done',''); }, reduce ? 0 : 950);
-  }
-  window.__openIris = openIris;                    // l'intro pixel-art appelle ceci en sortant
-  if (reduce || !window.__INTRO__) {
-    if (reduce) openIris();
-    else window.addEventListener('load', function(){ setTimeout(openIris, 260); });
-  }
-  /* Garde-fou : si l'intro echoue ou tarde, le site s'ouvre quand meme. */
-  setTimeout(function(){
-    if (!iris.hasAttribute('data-done')) {
-      var intro = document.getElementById('intro');
-      if (intro) intro.remove();
-      document.documentElement.classList.remove('intro-lock');
-      openIris();
-    }
-  }, 14000);
-
-  /* ---------- Iris wipe on in-page navigation ---------- */
-  function irisTo(hash){
-    var target = document.querySelector(hash);
-    if(!target) return;
-    if(reduce){ target.scrollIntoView(); return; }
-    iris.removeAttribute('data-done');
-    iris.style.transitionDuration = '.42s';
-    iris.classList.remove('open');                 // close (circle grows to cover)
-    setTimeout(function(){
-      target.scrollIntoView({behavior:'auto', block:'start'});
-      iris.classList.add('open');                  // reopen on the new position
-      setTimeout(function(){
-        iris.setAttribute('data-done','');
-        iris.style.transitionDuration = '';
-      }, 460);
-    }, 440);
-  }
-
-  document.querySelectorAll('a[href^="#"]').forEach(function(a){
-    a.addEventListener('click', function(e){
-      var hash = a.getAttribute('href');
-      if(hash.length < 2) return;
-      e.preventDefault();
-      closeMenu();
-      irisTo(hash);
-      history.replaceState(null,'',hash);
-    });
-  });
-
-  /* ---------- Nav state + mobile menu ---------- */
-  var nav = document.getElementById('nav'), burger = document.getElementById('burger');
-  function onScroll(){ nav.classList.toggle('is-stuck', window.scrollY > 12); }
-  onScroll(); window.addEventListener('scroll', onScroll, {passive:true});
-
-  function closeMenu(){ nav.classList.remove('is-open'); burger.setAttribute('aria-expanded','false'); }
-  burger.addEventListener('click', function(){
-    var open = nav.classList.toggle('is-open');
-    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-
-  /* ---------- Reveal on scroll ---------- */
-  var items = document.querySelectorAll('.rv');
-  if('IntersectionObserver' in window && !reduce){
-    var io = new IntersectionObserver(function(entries){
-      entries.forEach(function(en){
-        if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
-      });
-    }, {rootMargin:'0px 0px -12% 0px', threshold:.12});
-    items.forEach(function(el, i){ el.style.transitionDelay = (i % 2 ? 90 : 0) + 'ms'; io.observe(el); });
-  } else {
-    items.forEach(function(el){ el.classList.add('in'); });
-  }
-
-  /* ---------- Footer year ---------- */
-  document.getElementById('year').textContent = new Date().getFullYear();
-})();
-</script>
+<script src="assets/site.js"></script>
 </body>
 </html>

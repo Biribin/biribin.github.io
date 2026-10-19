@@ -1,0 +1,46 @@
+name: Publication du site
+
+# Publie UNIQUEMENT les fichiers du site (liste ci-dessous). Avant, GitHub Pages servait tout le
+# dépôt, y compris .claude/, CLAUDE.md, README.md et .gitignore.
+# Prérequis (une fois) : Settings → Pages → Build and deployment → Source : « GitHub Actions ».
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      # Actions épinglées sur leur empreinte de commit.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Assembler le site (liste blanche)
+        run: |
+          mkdir -p _site/assets
+          cp index.html index.md llms.txt robots.txt sitemap.xml favicon.ico workflow-mcp-video.html _site/
+          cp assets/*.js assets/*.html assets/*.svg assets/*.png assets/*.jpg assets/*.pdf _site/assets/
+          echo "Fichiers publiés :" && find _site -type f | sort
+
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: _site
+
+      - name: Déployer
+        id: deploiement
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
