@@ -1,2 +1,4 @@
 # Réglages personnels de Claude Code : jamais versionnés.
 .claude/settings.local.json
+# Copie locale de la fiche de veille du socle AEF (document interne) : pas sur le site public.
+.claude/aef-socle/knowledge/
