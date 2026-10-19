@@ -1,0 +1,20 @@
+# Linéo Biribin
+
+> Ingénieur automatisation et agents IA. Je remplace chaque processus manuel par un flux auditable : chaînes métier de bout en bout sur n8n auto-hébergé, avec une couche IA branchée dessus (paie, DSN, DPAE, facturation, contrats, conformité, veille réglementaire), pour un groupe d'intérim aéroportuaire de 900 intérimaires.
+
+Basé à Nogent-sur-Marne (94), mobile France entière, remote ou présentiel, tout type de contrat. En poste, préavis d'un mois.
+
+## Pages
+
+- [Profil complet](https://biribin.github.io/index.md): projets, parcours, compétences, contact
+- [CV (PDF)](https://biribin.github.io/assets/BIRIBIN-Lineo-cv.pdf): curriculum vitae
+
+## Projets publics
+
+- [51 workflows n8n open source](https://github.com/Biribin/n8n-workflows): licence MIT, veille, exploitation de n8n, veille réglementaire française
+- [GitHub](https://github.com/Biribin)
+
+## Contact
+
+- [Courriel](mailto:lineobiribin@gmail.com)
+- [LinkedIn](https://www.linkedin.com/in/lineo-biribin)
