@@ -347,6 +347,297 @@
         "path": ".env.example"
       },
       "attendu": 0
+    },
+    {
+      "nom": "CONTOURNEMENT copie sans lecture (revue 23/10/2026)",
+      "outil": "Bash",
+      "entree": {
+        "command": "cp .env /tmp/x.txt"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "CONTOURNEMENT lien symbolique",
+      "outil": "Bash",
+      "entree": {
+        "command": "ln -s .env notes.txt"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "CONTOURNEMENT diff",
+      "outil": "Bash",
+      "entree": {
+        "command": "diff .env /dev/null"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "CONTOURNEMENT git show",
+      "outil": "Bash",
+      "entree": {
+        "command": "git show HEAD:.env"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "CONTOURNEMENT git add du secret",
+      "outil": "Bash",
+      "entree": {
+        "command": "git add .env"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "CONTOURNEMENT dd if=",
+      "outil": "Bash",
+      "entree": {
+        "command": "dd if=.env"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "CONTOURNEMENT joker ?",
+      "outil": "Bash",
+      "entree": {
+        "command": "cat .en?"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "CONTOURNEMENT joker crochets",
+      "outil": "Bash",
+      "entree": {
+        "command": "cat .[e]nv"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "CONTOURNEMENT guillemets qui coupent le nom",
+      "outil": "Bash",
+      "entree": {
+        "command": "cat .e\"\"nv"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "CONTOURNEMENT variable intermédiaire",
+      "outil": "Bash",
+      "entree": {
+        "command": "f=.env; cat $f"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "CONTOURNEMENT substitution dans echo",
+      "outil": "Bash",
+      "entree": {
+        "command": "echo $(cat .env)"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "CONTOURNEMENT écraser le .env",
+      "outil": "Bash",
+      "entree": {
+        "command": "echo X=1 > .env"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "ENV echo d'une variable secrète",
+      "outil": "Bash",
+      "entree": {
+        "command": "echo $DATABASE_URL"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "ENV export -p",
+      "outil": "Bash",
+      "entree": {
+        "command": "export -p"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "ENV /proc/self/environ",
+      "outil": "Bash",
+      "entree": {
+        "command": "cat /proc/self/environ"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "ENV node -e process.env",
+      "outil": "Bash",
+      "entree": {
+        "command": "node -e \"console.log(process.env)\""
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "ENV python os.environ",
+      "outil": "Bash",
+      "entree": {
+        "command": "python -c \"import os; print(os.environ)\""
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "PowerShell .NET ReadAllText",
+      "outil": "PowerShell",
+      "entree": {
+        "command": "[IO.File]::ReadAllText(\".env\")"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "PowerShell Copy-Item",
+      "outil": "PowerShell",
+      "entree": {
+        "command": "Copy-Item .env x.txt"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "PowerShell variable secrète",
+      "outil": "PowerShell",
+      "entree": {
+        "command": "$env:DATABASE_URL"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "PowerShell lecteur Env:",
+      "outil": "PowerShell",
+      "entree": {
+        "command": "Get-Item env:SMTP_PASSWORD"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "PowerShell .NET Environment",
+      "outil": "PowerShell",
+      "entree": {
+        "command": "[Environment]::GetEnvironmentVariables()"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "Grep glob .env*",
+      "outil": "Grep",
+      "entree": {
+        "pattern": ".",
+        "glob": ".env*"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "Grep glob *.env",
+      "outil": "Grep",
+      "entree": {
+        "pattern": ".",
+        "glob": "*.env"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "Read .env avec espace final (Windows)",
+      "outil": "Read",
+      "entree": {
+        "file_path": "C:/p/.env "
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "Read .env::$DATA (flux NTFS)",
+      "outil": "Read",
+      "entree": {
+        "file_path": "C:/p/.env::$DATA"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "Read nom court ENV~1",
+      "outil": "Read",
+      "entree": {
+        "file_path": "C:/p/ENV~1"
+      },
+      "attendu": 2
+    },
+    {
+      "nom": "autorisé : ls du .env",
+      "outil": "Bash",
+      "entree": {
+        "command": "ls -la .env"
+      },
+      "attendu": 0
+    },
+    {
+      "nom": "autorisé : git check-ignore",
+      "outil": "Bash",
+      "entree": {
+        "command": "git check-ignore -v .env"
+      },
+      "attendu": 0
+    },
+    {
+      "nom": "autorisé : ajouter .env au .gitignore",
+      "outil": "Bash",
+      "entree": {
+        "command": "echo \".env\" >> .gitignore"
+      },
+      "attendu": 0
+    },
+    {
+      "nom": "autorisé : message de commit qui cite .env",
+      "outil": "Bash",
+      "entree": {
+        "command": "git commit -m \"ignorer .env\""
+      },
+      "attendu": 0
+    },
+    {
+      "nom": "autorisé : Test-Path",
+      "outil": "PowerShell",
+      "entree": {
+        "command": "Test-Path .env"
+      },
+      "attendu": 0
+    },
+    {
+      "nom": "autorisé : lister les .ts",
+      "outil": "Bash",
+      "entree": {
+        "command": "ls src/*.ts"
+      },
+      "attendu": 0
+    },
+    {
+      "nom": "autorisé : chemin Windows ordinaire",
+      "outil": "PowerShell",
+      "entree": {
+        "command": "Get-Content C:/projet/README.md"
+      },
+      "attendu": 0
+    },
+    {
+      "nom": "autorisé : compter les lignes d'un fichier d'apprenants",
+      "outil": "Bash",
+      "entree": {
+        "command": "wc -l _bmad-output/migration/scripts/normalized/apprenants.json"
+      },
+      "attendu": 0
+    },
+    {
+      "nom": "Grep glob *.{ts,tsx} autorisé",
+      "outil": "Grep",
+      "entree": {
+        "pattern": "x",
+        "glob": "*.{ts,tsx}"
+      },
+      "attendu": 0
     }
   ]
 }

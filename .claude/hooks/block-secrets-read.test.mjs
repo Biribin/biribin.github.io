@@ -44,4 +44,9 @@ console.log(
 );
 if (!echecFerme) echecs += 1;
 
+// Une charge utile vide aussi (revue du 23/10/2026 : elle passait).
+const vide = spawnSync(process.execPath, [HOOK], { input: '' });
+console.log(`${vide.status === 2 ? 'OK ' : 'KO '} charge utile vide → refus (échec fermé)`);
+if (vide.status !== 2) echecs += 1;
+
 process.exit(echecs === 0 ? 0 : 1);

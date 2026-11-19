@@ -2,3 +2,12 @@
 .claude/settings.local.json
 # Copie locale de la fiche de veille du socle AEF (document interne) : pas sur le site public.
 .claude/aef-socle/knowledge/
+
+# --- socle AEF : données réelles hors du dépôt (SEC-25) ---
+*.dump
+*.sqlite
+*.sqlite3
+*.pst
+*.mbox
+donnees-reelles/
+# --- fin socle AEF ---

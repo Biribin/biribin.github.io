@@ -1,17 +1,18 @@
 <!-- socle AEF : début -->
-# Security guidance
+# Security guidance — AEF Solutions projects
 
-Security rules for this project (from the AEF socle checklist; IDs in brackets refer to it). Flag any change that breaks one.
+Rules from the AEF socle (`.claude/aef-socle/knowledge/`, IDs in brackets). Flag any change that breaks one.
 
 ## Data and secrets
 - No secret in code, tests, fixtures, logs or `NEXT_PUBLIC_*` variables; secrets come from the environment only, read through the project's config module [DEV-05, SEC-09].
-- No personal data (names, birth dates, addresses, social security numbers, health data, bank details, payslips) in logs, error messages, Sentry events, seeds or tests; use invented or pseudonymised data [IA-01, RGPD-07, SEC-13].
+- No personal data (names, birth dates, addresses, France Travail IDs, social security numbers, health data, bank details) in logs, error messages, Sentry events, seeds or tests; use invented or pseudonymised data [IA-01, RGPD-07, SEC-13].
 - Sensitive columns go through the project's encryption layer; never store them in clear [RGPD-03].
 - No `console.*` in production code: use the project's logger [SEC-13].
 
 ## Access control
 - Every Server Action, route handler and export checks the session AND the role server-side before any read or write; never trust a client-supplied role, user id or establishment id [IAM-02, IAM-08, SEC-06].
-- In a multi-company or multi-tenant app, every query on business data is filtered by the company/tenant key; a missing filter is a critical finding [ARC-10, BDD-01].
+- Every query on client data is filtered by the establishment (`tenantId` or equivalent); a missing filter is a critical finding [ARC-10, BDD-01].
+- The Administrator role is AEF only; a client is at most Operator [ARC rules, `01-architecture-de-reference.md`].
 
 ## Input and output
 - Every external input is validated with zod, with a maximum length on every string and a bounded body size [DEV-01, SEC-11].
@@ -31,5 +32,5 @@ Security rules for this project (from the AEF socle checklist; IDs in brackets r
 - In production the app refuses to start if a mandatory secret or security service is missing; empty defaults are for development only [SEC-21].
 - No CORS header unless an explicit allow-list was decided [SEC-12].
 - No call to an AI model or AI API from the application without a written decision (the AI perimeter test must stay green) [IA-11, IA-12].
-- Any new third-party service receiving personal data is a subprocessor: record it in the processing register first.
+- Any new third-party service receiving data is a subprocessor: annex 3 and the register first [CTR-12].
 <!-- socle AEF : fin -->

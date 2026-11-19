@@ -1,0 +1,11 @@
+# Ce dossier fabrique du code qui finit collé dans un nœud Code de n8n.
+#
+# Sur un clone Windows où core.autocrlf vaut true, le checkout posait ces fichiers
+# en CRLF alors qu'ils sont versionnés en LF. Le générateur recopiait alors ces
+# retours chariot dans la chaîne jsCode du workflow importable, et son contrôle
+# rougissait sur ce poste seulement — en proposant de régénérer, c'est-à-dire de
+# livrer le JSON sali. On fige donc les fins de ligne au checkout, quelle que soit
+# la machine. Le README reste hors de cette règle : il ne nourrit aucun générateur.
+*.cjs  text eol=lf
+*.mjs  text eol=lf
+*.json text eol=lf

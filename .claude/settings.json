@@ -24,7 +24,24 @@
       "Read(**/.ssh/**)",
       "Bash(git commit --no-verify:*)",
       "Bash(git commit -n:*)",
-      "Bash(git push --no-verify:*)"
+      "Bash(git push --no-verify:*)",
+      "Read(**/id_ecdsa)",
+      "Read(**/id_dsa)",
+      "Read(**/*.p12)",
+      "Read(**/*.pfx)",
+      "Read(**/*.keystore)",
+      "Read(**/*.jks)",
+      "Read(**/.netrc)",
+      "Read(**/.pypirc)",
+      "Read(**/credentials)",
+      "Read(**/credentials.*)",
+      "Read(**/secrets.*)",
+      "Read(**/.aws/**)",
+      "Read(**/.kube/**)",
+      "Bash(git * --no-verify*)",
+      "Bash(git -c core.hooksPath*)",
+      "Bash(HUSKY=0 *)",
+      "Bash(LEFTHOOK=0 *)"
     ],
     "ask": [
       "Bash(git push:*)",
@@ -64,6 +81,19 @@
       {
         "matcher": "Edit|Write|MultiEdit",
         "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/aef-socle/hooks/config-protection.cjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/aef-socle/hooks/garde-donnees.cjs\" --claude"
+          },
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/aef-socle/hooks/config-protection.cjs\""
