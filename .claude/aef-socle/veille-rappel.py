@@ -6,6 +6,7 @@ Ce qu'il écrit est ajouté au contexte de la session : l'assistant propose alor
 ou la réinstallation du socle. Une fois par jour au plus ; ne bloque jamais la session.
 """
 import datetime
+import os
 import re
 import shutil
 import subprocess
@@ -26,8 +27,17 @@ def lire_veille(fiche):
 
 
 def version(commande):
+    # Sous Windows, shutil.which regarde d'abord le dossier courant : un « claude.bat » posé dans un projet cloné
+    # serait lancé à l'ouverture de la session. On demande à Windows de l'ignorer, et on écarte ce qu'il trouverait
+    # quand même dans le dossier courant ou dans le projet.
+    os.environ["NoDefaultCurrentDirectoryInExePath"] = "1"
     exe = shutil.which(commande)
     if not exe:
+        return None
+    dossier = Path(exe).resolve().parent
+    interdits = [Path.cwd().resolve()] + ([Path(os.environ["CLAUDE_PROJECT_DIR"]).resolve()]
+                                         if os.environ.get("CLAUDE_PROJECT_DIR") else [])
+    if dossier in interdits:
         return None
     try:
         sortie = subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=15).stdout

@@ -12,6 +12,7 @@ const { analyser } = require(join(dirname(fileURLToPath(import.meta.url)), 'conf
 const dossier = mkdtempSync(join(tmpdir(), 'config-protection-'));
 const existant = (nom) => { const p = join(dossier, nom); writeFileSync(p, '{}'); return p; };
 const entree = (chemin) => JSON.stringify({ tool_name: 'Edit', tool_input: { file_path: chemin } });
+const commande = (cmd) => JSON.stringify({ tool_name: 'Bash', tool_input: { command: cmd } });
 
 const cas = [
   ['eslint.config.mjs existant : bloqué', entree(existant('eslint.config.mjs')), 2],
@@ -23,8 +24,13 @@ const cas = [
   ['src/app/page.tsx : permis', entree(existant('page.tsx')), 0],
   ['vitest.config.ts : permis (outil de test, pas de lint)', entree(existant('vitest.config.ts')), 0],
   ['tsconfig.json : permis', entree(existant('tsconfig.json')), 0],
-  ['entrée vide : permis', '', 0],
-  ['JSON invalide : permis', '{pas du json', 0],
+  ['entrée vide : bloqué (échec fermé)', '', 2],
+  ['JSON invalide : bloqué (échec fermé)', '{pas du json', 2],
+  ['Bash sed -i sur eslint.config.mjs existant : bloqué', commande(`sed -i 's/error/off/' ${existant('eslint.config.mjs')}`), 2],
+  ['Bash redirection vers .eslintignore existant : bloqué', commande(`echo src >> ${existant('.eslintignore')}`), 2],
+  ['PowerShell Set-Content sur .prettierrc existant : bloqué', commande(`Set-Content ${existant('.prettierrc')} '{}'`), 2],
+  ['Bash cat eslint.config.mjs : permis (lecture)', commande(`cat ${existant('eslint.config.mjs')}`), 0],
+  ['Bash lancer le linter : permis', commande('npx eslint .'), 0],
 ];
 
 let echecs = 0;

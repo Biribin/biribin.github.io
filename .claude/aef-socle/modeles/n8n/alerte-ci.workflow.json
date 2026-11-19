@@ -1,0 +1,91 @@
+{
+  "name": "AEF · alerte CI",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "alerte-ci",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "aef-alerte-ci-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "aef-alerte-ci",
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Workflow « AEF · alerte CI » — contenu du nœud Code (mode « Run Once for All Items »).\n// Socle AEF, fiche 12 : CTL-02 (objet normalisé), CTL-03 (aucune donnée personnelle ni secret), CTL-06 (anti-tempête).\n// Reçoit ce que poste la chaîne d'intégration continue d'un projet et rend : { sujet, texte, gravite }.\n// Le nœud suivant (Send Email) envoie ces champs ; son destinataire est réglé dans ce nœud, pas dans ce code.\n// Testé par alerte-ci.test.mjs (node --test). Ne pas modifier dans n8n sans reporter la modification ici.\n//\n// ─────────────────────────────────────────────────────────────────────────────\n// POURQUOI CE MODÈLE EXISTE — 12/11/2026\n//\n// Le socle décrivait UN seul workflow d'alerte : « AEF · alerte erreur », déclenché par un Error Trigger, c'est-à-dire\n// quand un workflow n8n échoue. Rien ne recevait les alertes venues de L'EXTÉRIEUR — et la chaîne d'intégration\n// continue en est une.\n//\n// Ce qu'a coûté ce trou, dans le CRM Terminal Academy : le secret qui porte l'adresse du webhook visait une ancienne\n// instance, éteinte depuis. Le `curl` de la chaîne échouait sur « Could not resolve host », quatre tentatives\n// comprises, et personne n'était prévenu. La chaîne est restée rouge du 5 au 11 novembre 2026 — avec, parmi les\n// rouges, une exécution de code à distance non authentifiée dans Next.js, en production chez un client.\n//\n// ⚠️ LE PIÈGE À CONNAÎTRE : une adresse qui répond mais ne déclenche rien est PIRE qu'une adresse morte. La seconde\n// fait échouer le `curl`, donc elle se voit ; la première rend le job vert et fait croire que quelqu'un veille.\n// D'où l'essai obligatoire (CTL-05) décrit dans le README : tant qu'un courriel n'est pas ARRIVÉ, l'alerte n'existe pas.\n// ─────────────────────────────────────────────────────────────────────────────\n\nconst REGLAGES = {\n  delaiMinutes: 30, // une même chaîne en échec au plus une fois par demi-heure (CTL-06)\n};\n\n/** N'accepte une valeur que si elle a la forme attendue. Tout le reste est remplacé par un repli sûr. */\nconst SUR = (valeur, motif) =>\n  (typeof valeur === 'string' || typeof valeur === 'number') && motif.test(String(valeur));\n\nfunction heureDeParis(date) {\n  return new Intl.DateTimeFormat('fr-FR', {\n    dateStyle: 'short',\n    timeStyle: 'short',\n    timeZone: 'Europe/Paris',\n  }).format(date);\n}\n\n/** « yyjalil/crm-terminal-academy » → « crm-terminal-academy », pour l'objet du courriel. */\nfunction projetDe(depot) {\n  const apres = String(depot).split('/').pop();\n  return SUR(apres, /^[A-Za-z0-9._-]{1,60}$/) ? apres : 'projet';\n}\n\n/**\n * Construit l'alerte à partir de ce que poste la chaîne.\n *\n * ⚠️ LISTE BLANCHE, comme pour « alerte erreur » : chaque champ est vérifié avant d'entrer dans le courriel. Une\n * chaîne d'intégration peut mettre à peu près n'importe quoi dans un nom de branche ou un message, et ce courriel\n * part vers une boîte lue par plusieurs personnes. Ce qui ne correspond pas à la forme attendue est remplacé, jamais\n * recopié tel quel.\n */\nfunction construire(entree, maintenant) {\n  const depot = SUR(entree.depot, /^[A-Za-z0-9._-]{1,60}\\/[A-Za-z0-9._-]{1,60}$/) ? entree.depot : 'dépôt inconnu';\n  const chaine = SUR(entree.chaine, /^[A-Za-z0-9 ._·-]{1,60}$/) ? entree.chaine : 'chaîne';\n  const branche = SUR(entree.branche, /^[A-Za-z0-9._\\/-]{1,80}$/) ? entree.branche : 'branche inconnue';\n  const commit = SUR(entree.commit, /^[0-9a-f]{7,40}$/) ? String(entree.commit).slice(0, 12) : null;\n  const auteur = SUR(entree.auteur, /^[A-Za-z0-9._-]{1,40}$/) ? entree.auteur : null;\n  const declencheur = SUR(entree.declencheur, /^[a-z_]{1,30}$/) ? entree.declencheur : null;\n  // `resultats` est produit par la chaîne elle-même, sous la forme « lint: failure | unit: success | … ».\n  const resultats = SUR(entree.resultats, /^[A-Za-z0-9 :|_-]{1,200}$/) ? entree.resultats : 'détail non lisible';\n  // Seule une adresse du journal d'Actions est admise : un lien quelconque dans un courriel d'alerte est une porte.\n  const url = SUR(entree.url, /^https:\\/\\/github\\.com\\/[A-Za-z0-9._-]+\\/[A-Za-z0-9._-]+\\/actions\\/runs\\/\\d+$/)\n    ? entree.url\n    : null;\n\n  // Une chaîne rouge sur la branche principale bloque la mise en production : c'est plus grave qu'un rouge de branche.\n  const surPrincipale = branche === 'main' || branche === 'master';\n  const gravite = surPrincipale ? 'CRITIQUE' : 'ALERTE';\n  const projet = projetDe(depot);\n\n  return {\n    cle: `${depot}|${chaine}|${branche}`, // même dépôt, même chaîne, même branche : une seule alerte par délai\n    gravite,\n    sujet: `[AEF][${projet}][${gravite}] Chaîne « ${chaine} » en échec sur ${branche}`,\n    lignes: [\n      `La chaîne « ${chaine} » du dépôt ${depot} a échoué le ${heureDeParis(maintenant)} (heure de Paris).`,\n      `Branche : ${branche}${surPrincipale ? ' — la mise en production est bloquée tant que ce rouge dure.' : ''}`,\n      `Résultats : ${resultats}`,\n      ...(commit ? [`Commit : ${commit}`] : []),\n      ...(auteur ? [`Auteur : ${auteur}`] : []),\n      ...(declencheur ? [`Déclenché par : ${declencheur}`] : []),\n      '',\n      ...(url ? [`Journal : ${url}`, ''] : ['Journal : lien non transmis — voir l’onglet Actions du dépôt.', '']),\n      'Ni le code ni les messages d’erreur ne sont recopiés ici : ils sont dans le journal, derrière l’accès au dépôt.',\n      'Procédure : fiche 12 du socle AEF (contrôles et alertes), §7 — donner une suite dans le jour ouvré.',\n    ],\n  };\n}\n\n/**\n * Anti-tempête (CTL-06) : une même clé part au plus une fois par délai. Une chaîne qu'on relance cinq fois de suite\n * ne doit pas remplir la boîte — c'est ainsi qu'on apprend à ignorer les alertes.\n */\nfunction filtrerTempete(alertes, memoire, maintenant, reglages = REGLAGES) {\n  memoire.envois = memoire.envois || {};\n  const delai = reglages.delaiMinutes * 60 * 1000;\n  const aEnvoyer = [];\n  for (const a of alertes) {\n    const passe = memoire.envois[a.cle];\n    if (passe && maintenant.getTime() - passe.date < delai) {\n      passe.retenues = (passe.retenues || 0) + 1;\n      continue;\n    }\n    const retenues = passe ? passe.retenues || 0 : 0;\n    memoire.envois[a.cle] = { date: maintenant.getTime(), retenues: 0 };\n    const lignes = retenues\n      ? [...a.lignes, `Cette chaîne a aussi échoué ${retenues} fois depuis le dernier courriel.`]\n      : a.lignes;\n    aEnvoyer.push({ sujet: a.sujet, texte: lignes.join('\\n'), gravite: a.gravite });\n  }\n  for (const [cle, valeur] of Object.entries(memoire.envois)) { // la mémoire ne grossit pas sans fin\n    if (maintenant.getTime() - valeur.date > 7 * 24 * 3600 * 1000) delete memoire.envois[cle];\n  }\n  return aEnvoyer;\n}\n\n\n\n// ⚠️ `$input.all()` ET NON `items`. Relevé le 12/11/2026, au premier courriel reçu : il est bien arrivé, de la bonne\n// adresse, à la bonne boîte — avec « undefined » pour tout contenu. `items` est la variable de l'ancien nœud\n// *Function* ; le nœud *Code* ne l'expose pas. Le nœud n'a donc rien produit, et « Envoyer l'alerte » a reçu\n// l'élément brut du webhook, sans `sujet` ni `texte`. C'est `alerte-erreur.cjs` qui avait raison depuis le début —\n// il suffisait de le lire.\n\nconst entrees = $input.all().map((element) => element.json.body || element.json);\nconst maintenant = new Date();\nconst alertes = entrees.map((e) => construire(e, maintenant));\nreturn filtrerTempete(alertes, $getWorkflowStaticData('global'), maintenant).map((json) => ({ json }));\n"
+      },
+      "id": "aef-alerte-ci-code",
+      "name": "Construire l'alerte",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "noreply@mail.aef-solutions.fr",
+        "toEmail": "À RÉGLER — boîte d’exploitation",
+        "subject": "={{ $json.sujet }}",
+        "emailFormat": "text",
+        "text": "={{ $json.texte }}",
+        "options": {}
+      },
+      "id": "aef-alerte-ci-email",
+      "name": "Envoyer l'alerte",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {}
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Construire l'alerte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construire l'alerte": {
+      "main": [
+        [
+          {
+            "node": "Envoyer l'alerte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Paris",
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "aef"
+    }
+  ]
+}

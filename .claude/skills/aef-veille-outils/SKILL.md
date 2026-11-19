@@ -36,12 +36,29 @@ Pour chaque nouveauté retenue, un classement de la fiche §2, avec une ligne d'
 
 Reprends aussi la section « À évaluer » existante : ce qui a été essayé ou décidé depuis change de colonne.
 
+## 3 bis. Reprendre un skill d'un dépôt public
+
+Un skill est du texte que l'assistant suit comme une consigne : il entre dans le socle avec les mêmes égards qu'une
+dépendance. Dans cet ordre, et sans rien sauter :
+
+1. **Licence** : MIT, Apache 2.0 ou équivalent. Sans licence, on ne reprend rien.
+2. **Copie figée** : le fichier est copié à un commit précis, jamais installé comme extension qui se met à jour
+   seule. Le commit est noté dans `THIRD_PARTY_NOTICES.md` et en tête du fichier (provenance et adaptations).
+3. **Texte seul** : on ne reprend ni garde-fou d'ouverture de session, ni script lancé après chaque modification,
+   ni exécutable téléchargé au premier appel. Un skill qui ne sait pas travailler sans eux n'entre pas.
+4. **Consignes cachées** : `python outils/consignes-cachees.py <dossier du skill>` avant la relecture, puis relecture
+   humaine. Un seul signalement non expliqué : on n'importe pas.
+5. **Doublon** : si une commande intégrée (`/code-review`, `/security-review`, `/simplify`, le mode plan) ou une
+   commande `aef-*` fait déjà le travail, on ne l'importe pas ; on écrit la raison dans la fiche §5.
+6. **Adaptation** : ce que le socle exige n'est jamais présenté comme facultatif par un skill repris.
+
 ## 4. Écrire
 
 Dans le dépôt `aef-socle` (si tu n'y es pas, prépare le texte et dis à l'utilisateur de l'appliquer là-bas) :
 
 1. Fiche 11 : la ligne `<!-- veille: date=AAAA-MM-JJ claude-code=X vscode=Y -->`, le tableau §1, les sections 3 à 5,
-   une ligne d'historique §7.
+   une ligne d'historique §7. La ligne de veille et le tableau §1 ne changent que si les notes de version de
+   Claude Code et de VS Code ont bien été lues ce jour-là : sinon le rappel de veille se tairait à tort.
 2. Une pratique qui passe en vigueur et change la façon de démarrer un projet : ajoute-la à
    `skills/aef-nouveau-projet/SKILL.md` ; si elle se contrôle, à `09-exigences.csv` (série `OUT-`), avec la preuve.
 3. Montre le différentiel et propose un commit sur une branche. Pas de push sur `main` sans confirmation (IA-04).

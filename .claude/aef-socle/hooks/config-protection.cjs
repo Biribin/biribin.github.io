@@ -6,8 +6,8 @@
  * (ESLint, Prettier, Stylelint, markdownlint, Biome…) ou leurs fichiers
  * d'ignore pour faire passer un contrôle. Il doit corriger le code.
  * La création d'un fichier qui n'existe pas encore reste permise.
- * Une personne, elle, n'est pas bloquée : seul l'outil d'édition de
- * l'assistant passe par ce garde-fou.
+ * Une personne, elle, n'est pas bloquée : seuls les outils d'édition et les
+ * commandes Bash et PowerShell de l'assistant passent par ce garde-fou.
  *
  * Provenance : affaan-m/ECC@76aaa77, scripts/hooks/config-protection.js,
  * licence MIT (c) 2026 Affaan Mustafa (voir THIRD_PARTY_NOTICES.md du socle).
@@ -141,6 +141,22 @@ function isProtectedName(basename) {
   return parties.length >= 3 && parties[0] === '' && OUTILS_RC.has(parties[1]) && EXT_RC.has(ext);
 }
 
+// Bash et PowerShell (revue du 23/10/2026) : `sed -i` ou `echo … > .eslintignore` contournaient l'outil d'édition.
+// Une commande qui nomme une configuration protégée ET qui écrit, déplace ou supprime est refusée ; la lire
+// (cat, git diff, lancer le linter) reste permis.
+const ECRITURE = new RegExp([
+  String.raw`\bsed\b[^|;&\n]*\s-[a-zA-Z]*i`, String.raw`\bperl\b[^|;&\n]*\s-[a-zA-Z]*i`, String.raw`>`,
+  String.raw`\b(tee|mv|cp|rm|del|erase|ren|rename|move|copy|truncate|install|ln|dd|patch|unlink)\b`,
+  String.raw`\b(Set|Add|Clear)-Content\b`, String.raw`\bOut-File\b`, String.raw`\b(Remove|Rename|Move|Copy|New|Set)-Item\b`,
+  String.raw`\b(sc|ac|clc|ri|rni|mi|cpi|ni)\b`, String.raw`\bgit\s+(checkout|restore|apply|rm|mv)\b`,
+  String.raw`\b(python3?|py|node|deno|bun|perl|ruby|php|pwsh|powershell)\b`, String.raw`\[(System\.)?IO\.File\]::`,
+].join('|'), 'i');
+
+function cheminsModifiesParCommande(commande) {
+  if (!ECRITURE.test(commande)) return [];
+  return commande.replace(/["'`]/g, ' ').split(/[\s;|&<>()=,]+/).filter(Boolean);
+}
+
 function analyser(brut, tronque) {
   if (tronque) {
     return {
@@ -148,26 +164,30 @@ function analyser(brut, tronque) {
       message: 'BLOQUÉ : entrée du garde-fou trop longue, refus par prudence (config-protection).',
     };
   }
-  let entree = {};
+  let entree;
   try {
-    entree = brut.trim() ? JSON.parse(brut) : {};
+    entree = JSON.parse(brut);
   } catch {
-    entree = {};
+    // Échec fermé (revue du 23/10/2026) : une entrée vide ou illisible ne vaut pas permission.
+    return { code: 2, message: 'BLOQUÉ : entrée du garde-fou vide ou illisible, refus par prudence (config-protection).' };
   }
-  const chemin = (entree.tool_input && (entree.tool_input.file_path || entree.tool_input.file)) || '';
-  if (!chemin) return { code: 0 };
-  const nom = path.basename(chemin);
-  if (!isProtectedName(nom)) return { code: 0 };
-
+  const outil = (entree && entree.tool_input) || {};
+  const chemins = outil.command
+    ? cheminsModifiesParCommande(String(outil.command))
+    : [outil.file_path || outil.file || ''].filter(Boolean);
   // Création d'une configuration absente : permise. Toute autre erreur que
   // « introuvable » est traitée comme « présent » (on ne s'affaiblit jamais).
-  let existe = true;
-  try {
-    fs.lstatSync(chemin);
-  } catch (err) {
-    if (err && err.code === 'ENOENT') existe = false;
-  }
-  if (!existe) return { code: 0 };
+  const vise = chemins.find((chemin) => {
+    if (!isProtectedName(path.basename(chemin))) return false;
+    try {
+      fs.lstatSync(chemin);
+    } catch (err) {
+      if (err && err.code === 'ENOENT') return false;
+    }
+    return true;
+  });
+  if (!vise) return { code: 0 };
+  const nom = path.basename(vise);
 
   return {
     code: 2,
