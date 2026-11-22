@@ -64,11 +64,12 @@
     <!-- Étape 2 : montant -->
     <form class="step" id="s2" hidden novalidate>
       <h2>Étape 2 · Combien pour mon sommeil&nbsp;?</h2>
-      <div class="chips" role="group" aria-label="Montants rapides">
-        <button type="button" class="chip" data-v="5">5 €</button>
-        <button type="button" class="chip" data-v="10">10 €</button>
-        <button type="button" class="chip" data-v="20">20 €</button>
-        <button type="button" class="chip" data-v="50">50 €</button>
+      <p class="chips__hint">Montants mystère : à toi de calculer 🤓</p>
+      <div class="chips" role="group" aria-label="Montants mystère">
+        <button type="button" class="chip" data-v="5">∫<sub>0</sub><sup>1</sup> 10x dx €</button>
+        <button type="button" class="chip" data-v="10">log<sub>2</sub>(1024) €</button>
+        <button type="button" class="chip" data-v="20">4! − 2² €</button>
+        <button type="button" class="chip" data-v="50">e<sup>iπ</sup> + 51 €</button>
       </div>
       <label for="montant">Ou un autre montant (1 à 500 €)</label>
       <div class="euro"><input id="montant" name="montant" type="number" inputmode="decimal" min="1" max="500" step="1" placeholder="15"><span>€</span></div>
