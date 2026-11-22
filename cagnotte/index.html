@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://formsubmit.co; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="robots" content="noindex, nofollow">
+<title>La cagnotte dodo de Linéo</title>
+<meta name="description" content="Aidez Linéo à bien dormir : un matelas, une couette, et des nuits enfin tranquilles.">
+<meta property="og:title" content="La cagnotte dodo de Linéo 😴">
+<meta property="og:description" content="Un matelas d'abord, une couette ensuite. Chaque euro compte (surtout pour mon dos).">
+<meta name="theme-color" content="#14123a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%98%B4%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<div class="sky" aria-hidden="true"></div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<main class="wrap">
+  <header class="hero">
+    <div class="moon" aria-hidden="true">🌙</div>
+    <h1>La cagnotte dodo<br>de <span class="hl">Linéo</span></h1>
+    <p class="lead">Mon dos a porté plainte contre mon matelas. Aidez-moi à gagner le procès&nbsp;: un matelas d'abord, une couette ensuite, et des nuits enfin tranquilles.</p>
+  </header>
+
+  <section class="card gauge" aria-labelledby="g-title">
+    <h2 id="g-title" class="sr">Où en est la cagnotte</h2>
+    <div class="gauge__top">
+      <span class="gauge__total"><b id="total">…</b> € récoltés</span>
+      <span class="gauge__goal">objectif <b id="goal">550</b> €</span>
+    </div>
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="550" aria-valuenow="0" id="bar">
+      <div class="bar__fill" id="fill"></div>
+    </div>
+    <ol class="steps-goal" id="paliers"></ol>
+    <p class="gauge__note" id="maj"></p>
+  </section>
+
+  <section class="card flow" aria-live="polite">
+    <ol class="dots" aria-hidden="true">
+      <li class="on">1</li><li>2</li><li>3</li>
+    </ol>
+
+    <!-- Étape 1 : prénom -->
+    <form class="step" id="s1" novalidate>
+      <h2>Étape 1 · Qui es-tu, généreux dormeur&nbsp;?</h2>
+      <label for="prenom">Ton prénom</label>
+      <input id="prenom" name="prenom" autocomplete="given-name" maxlength="40" placeholder="ex. Julie" required>
+      <p class="err" id="err1" hidden></p>
+      <div class="mom" id="mom" hidden>
+        <div class="mom__emoji" aria-hidden="true">🙅‍♀️</div>
+        <p><b>Non toi maman, tu as déjà participé, tu arrêtes maintenant&nbsp;😄</b></p>
+        <p class="small">Merci pour tout, vraiment. Mais range ce portefeuille.</p>
+      </div>
+      <button class="btn" type="submit">C'est moi, on continue →</button>
+    </form>
+
+    <!-- Étape 2 : montant -->
+    <form class="step" id="s2" hidden novalidate>
+      <h2>Étape 2 · Combien pour mon sommeil&nbsp;?</h2>
+      <div class="chips" role="group" aria-label="Montants rapides">
+        <button type="button" class="chip" data-v="5">5 €</button>
+        <button type="button" class="chip" data-v="10">10 €</button>
+        <button type="button" class="chip" data-v="20">20 €</button>
+        <button type="button" class="chip" data-v="50">50 €</button>
+      </div>
+      <label for="montant">Ou un autre montant (1 à 500 €)</label>
+      <div class="euro"><input id="montant" name="montant" type="number" inputmode="decimal" min="1" max="500" step="1" placeholder="15"><span>€</span></div>
+      <p class="fun" id="fun">Choisis un montant, je te dis ce qu'il devient 👀</p>
+      <p class="err" id="err2" hidden></p>
+      <div class="row">
+        <button class="btn btn--ghost" type="button" data-back="s1">← Retour</button>
+        <button class="btn" type="submit">Je valide →</button>
+      </div>
+    </form>
+
+    <!-- Étape 3 : paiement -->
+    <div class="step" id="s3" hidden>
+      <h2>Étape 3 · Comment tu envoies&nbsp;?</h2>
+      <p class="recap" id="recap"></p>
+      <div class="pay">
+        <button class="pay__btn pay--paypal" type="button" data-pay="paypal">PayPal</button>
+        <button class="pay__btn pay--lydia" type="button" data-pay="lydia">Lydia</button>
+        <button class="pay__btn pay--wero" type="button" data-pay="wero">Wero</button>
+      </div>
+      <div class="payinfo" id="payinfo" hidden></div>
+      <div class="row">
+        <button class="btn btn--ghost" type="button" data-back="s2">← Retour</button>
+      </div>
+    </div>
+
+    <!-- Merci -->
+    <div class="step" id="s4" hidden>
+      <div class="thanks__emoji" aria-hidden="true">🛏️✨</div>
+      <h2 id="thx-title">Merci&nbsp;!</h2>
+      <p class="fun fun--big" id="thx-fun"></p>
+      <p class="small">Linéo est prévenu. Il dormira mieux, et c'est grâce à toi.</p>
+      <button class="btn btn--ghost" type="button" id="again">Faire un autre don</button>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>La jauge additionne les dons déclarés ici et mis à jour par Linéo&nbsp;; personne ne voit qui a donné quoi.</p>
+    <p>Fait avec amour et beaucoup de fatigue · <span aria-hidden="true">💤</span></p>
+  </footer>
+</main>
+</body>
+</html>
