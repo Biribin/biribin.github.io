@@ -317,4 +317,9 @@ function confettis() {
   })();
 }
 
+/* ---------- Exemple de prénom : un super-héros différent à chaque visite ---------- */
+const HEROS = ['Batman', 'Wonder Woman', 'Spider-Man', 'Iron Man', 'Black Panther', 'Captain Marvel',
+  'Superman', 'Hulk', 'Thor', 'Black Widow', 'Wolverine', 'Catwoman', 'Flash', 'Aquaman', 'Supergirl', 'Deadpool'];
+$('prenom').placeholder = 'ex. ' + HEROS[Math.floor(Math.random() * HEROS.length)];
+
 chargerTotal();
