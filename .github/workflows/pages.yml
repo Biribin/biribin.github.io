@@ -33,7 +33,7 @@ jobs:
           mkdir -p _site/assets
           cp index.html index.md llms.txt robots.txt sitemap.xml favicon.ico workflow-mcp-video.html _site/
           cp assets/*.js assets/*.html assets/*.svg assets/*.png assets/*.jpg assets/*.pdf _site/assets/
-          mkdir -p _site/cagnotte && cp cagnotte/index.html cagnotte/app.js cagnotte/style.css cagnotte/total.json _site/cagnotte/
+          mkdir -p _site/cagnotte && cp cagnotte/index.html cagnotte/app.js cagnotte/style.css cagnotte/total.json cagnotte/paypal-qr.png _site/cagnotte/
           echo "Fichiers publiés :" && find _site -type f | sort
 
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5

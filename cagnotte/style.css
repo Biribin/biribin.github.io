@@ -114,6 +114,9 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 .payinfo p{margin:0 0 10px}
 .payinfo .num{font-size:1.3rem;font-weight:700;letter-spacing:.04em;color:var(--moon);word-break:break-all}
 .payinfo .btn{margin-top:8px}
+.qr{display:block;margin:6px auto 0;background:#fff;border-radius:14px;padding:6px}
+.qr-txt{margin:16px 0 0!important;text-align:center}
+@media (pointer:coarse){.qr,.qr-txt{display:none}}
 
 .thanks__emoji{font-size:58px;text-align:center}
 #s4 h2{text-align:center;font-size:1.6rem}

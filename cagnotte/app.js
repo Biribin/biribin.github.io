@@ -5,10 +5,10 @@
    Un moyen laissé vide ('') n'apparaît pas sur la page.
    ============================================================ */
 const CONFIG = {
-  paypalMe: '',        // ex. 'lineobiribin'  → https://paypal.me/lineobiribin/20EUR
+  paypalMe: 'leanesthaut',        // ex. 'lineobiribin'  → https://paypal.me/lineobiribin/20EUR
   lydiaLien: '',       // lien de cagnotte ou de paiement Lydia (https://…), sinon ''
-  lydiaNumero: '',     // ex. '06 12 34 56 78' (si pas de lien Lydia)
-  weroNumero: '',      // numéro ou e-mail associé à Wero
+  lydiaNumero: '06 50 55 91 84',     // ex. '06 12 34 56 78' (si pas de lien Lydia)
+  weroNumero: '06 50 55 91 84',      // numéro ou e-mail associé à Wero
   notifEmail: 'lineobiribin@gmail.com', // reçoit « Julie a mis 20 € via Lydia »
   objectif: 550,
   paliers: [           // cumulés, dans l'ordre de priorité
@@ -217,6 +217,9 @@ document.querySelectorAll('.pay__btn').forEach(b => b.addEventListener('click', 
     const url = `https://paypal.me/${encodeURIComponent(CONFIG.paypalMe)}/${etat.montant}EUR`;
     info.append(ligne('PayPal s\'ouvre avec le montant déjà rempli. Choisis « Entre proches » si on te le propose : pas de frais.'));
     info.append(bouton('Ouvrir PayPal →', false, () => { notifier(); window.open(url, '_blank', 'noopener'); }));
+    const qr = document.createElement('img');
+    qr.src = 'paypal-qr.png'; qr.alt = 'QR code PayPal de Linéo'; qr.className = 'qr'; qr.width = 180; qr.height = 180;
+    info.append(ligne('Sur ordinateur ? Scanne ce QR code avec ton téléphone :', 'small qr-txt'), qr);
     info.append(fini);
   } else {
     const nom = etat.moyen;
