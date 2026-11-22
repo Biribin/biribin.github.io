@@ -9,7 +9,8 @@ const CONFIG = {
   lydiaLien: '',       // lien de cagnotte ou de paiement Lydia (https://…), sinon ''
   lydiaNumero: '06 50 55 91 84',     // ex. '06 12 34 56 78' (si pas de lien Lydia)
   weroNumero: '06 50 55 91 84',      // numéro ou e-mail associé à Wero
-  notifEmail: 'lineobiribin@gmail.com', // reçoit « Julie a mis 20 € via Lydia »
+  n8n: 'https://n8n.aef-solutions.fr/webhook', // workflow « Cagnotte dodo » : compteur + mail Gmail
+  notifEmail: 'lineobiribin@gmail.com', // secours si n8n ne répond pas // reçoit « Julie a mis 20 € via Lydia »
   objectif: 550,
   paliers: [           // cumulés, dans l'ordre de priorité
     { ico: '🛏️', nom: 'Le matelas', montant: 450, prio: true },
@@ -99,7 +100,22 @@ function afficherJauge(total) {
   });
 }
 let totalConnu = 0;
+async function totalN8n() {
+  const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 5000);
+  try {
+    const r = await fetch(CONFIG.n8n + '/cagnotte-total', { signal: ctl.signal, cache: 'no-store' });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return typeof d.total === 'number' ? d : null;
+  } catch { return null; } finally { clearTimeout(to); }
+}
 async function chargerTotal() {
+  const n = await totalN8n();
+  if (n) {
+    totalConnu = n.total;
+    if (n.maj) $('maj').textContent = 'Mis à jour le ' + new Date(n.maj).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+    return afficherJauge(totalConnu);
+  }
   try {
     const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 6000);
     const r = await fetch('total.json?t=' + Date.now(), { signal: ctl.signal, cache: 'no-store' });
@@ -178,9 +194,26 @@ function preparerPaiements() {
   }
 }
 
+let totalServeur = null;
 function notifier() {
-  if (etat.notifie || estMaman(etat.prenom)) return;
-  etat.notifie = true;
+  if (estMaman(etat.prenom)) return Promise.resolve();
+  if (!etat.notifie) { etat.notifie = true; etat.envoi = envoyer(); }
+  return etat.envoi;
+}
+async function envoyer() {
+  try {
+    const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 6000);
+    const r = await fetch(CONFIG.n8n + '/cagnotte-don', {
+      method: 'POST', signal: ctl.signal,
+      headers: { 'Content-Type': 'text/plain' }, // requête simple : pas de pré-vol CORS
+      body: JSON.stringify({ prenom: etat.prenom, montant: etat.montant, moyen: etat.moyen }),
+    });
+    clearTimeout(to);
+    if (r.ok) { const d = await r.json(); if (typeof d.total === 'number') totalServeur = d.total; return; }
+  } catch {}
+  notifierSecours();
+}
+function notifierSecours() {
   const corps = {
     prenom: etat.prenom,
     montant: fmt(etat.montant) + ' €',
@@ -211,7 +244,11 @@ function copier(txt, btn) {
 document.querySelectorAll('.pay__btn').forEach(b => b.addEventListener('click', () => {
   etat.moyen = { paypal: 'PayPal', lydia: 'Lydia', wero: 'Wero' }[b.dataset.pay];
   const info = $('payinfo'); info.textContent = ''; info.hidden = false;
-  const fini = bouton('C\'est envoyé 🎉', false, () => { notifier(); merci(); });
+  const fini = bouton('C\'est envoyé 🎉', false, async () => {
+    fini.disabled = true;
+    await Promise.race([notifier(), new Promise(r => setTimeout(r, 4000))]);
+    merci(); fini.disabled = false;
+  });
 
   if (b.dataset.pay === 'paypal') {
     const url = `https://paypal.me/${encodeURIComponent(CONFIG.paypalMe)}/${etat.montant}EUR`;
@@ -243,12 +280,12 @@ document.querySelectorAll('.pay__btn').forEach(b => b.addEventListener('click', 
 function merci() {
   $('thx-title').textContent = `Merci ${etat.prenom} !`;
   $('thx-fun').textContent = phrase(etat.montant);
-  afficherJauge(totalConnu + etat.montant);
+  afficherJauge(totalServeur ?? (totalConnu + etat.montant));
   aller('s4');
   confettis();
 }
 $('again').addEventListener('click', () => {
-  Object.assign(etat, { montant: 0, moyen: '', notifie: false });
+  Object.assign(etat, { montant: 0, moyen: '', notifie: false, envoi: null }); totalServeur = null;
   $('montant').value = ''; majMontant('');
   afficherJauge(totalConnu);
   aller('s2');
