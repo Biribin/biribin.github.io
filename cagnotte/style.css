@@ -53,6 +53,7 @@ h1{font-size:clamp(2rem,8vw,2.7rem);line-height:1.05;margin:10px 0 12px;font-wei
 .steps-goal li.done .ico{filter:none;opacity:1}
 .steps-goal li.done .amt::after{content:" ✓";color:var(--mint)}
 .steps-goal li.prio .tag{font-size:.72rem;background:var(--moon);color:#2b2300;border-radius:999px;padding:1px 8px;font-weight:600}
+.relax{margin:14px 0 0;padding:12px 14px;border-radius:14px;background:rgba(126,240,196,.12);border:1px solid rgba(126,240,196,.35);font-size:.95rem}
 .gauge__note{margin:10px 0 0;font-size:.8rem;color:var(--muted);text-align:right}
 
 .dots{list-style:none;display:flex;justify-content:center;gap:10px;margin:0 0 14px;padding:0}
