@@ -35,7 +35,7 @@ function lev(a, b) {
 }
 // [mot, fautes tolérées]
 const MAMAN = [['maman', 1], ['mamounette', 2], ['mamounet', 2],
-  ['mama', 0], ['mom', 0], ['mum', 0], ['mere', 0], ['mother', 1], ['mutti', 0], ['mamie', 0]];
+  ['mama', 0], ['mom', 0], ['mum', 0], ['mere', 0], ['mother', 1], ['mutti', 0]];
 function estMaman(prenom) {
   const n = norm(prenom);
   if (!n) return false;
