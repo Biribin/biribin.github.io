@@ -32,6 +32,12 @@ description: Vérifie un logiciel d'AEF Solutions contre le socle — chaque exi
      polices préchargées (`link: rel=preload`). Un préchargement qui ne sert pas à l'écran affiché est un manque.
    - PERF-33 se prouve en lançant la mesure du projet, sur une application **bâtie**. Une mesure prise sur un
      serveur de développement ne vaut rien : la dire conforme serait une erreur, pas une approximation.
+   - PERF-34 se prouve par le test du double passage (zéro écriture au second), PERF-35 par la liste des tables qui
+     grandissent, chacune avec sa durée et sa tâche de purge. Cherche les tables de journal ou d'historique du schéma
+     qui n'y sont pas : c'est là que la base grossit sans bruit.
+   - PERF-38 et PERF-41 se lisent sur la production, en chiffres seulement : `pg_stat_statements`,
+     `pg_stat_user_tables`, taille des tables, et les heures des sauvegardes complètes dans le journal du serveur.
+     Une sauvegarde complète en journée sans maintenance ni incident noté est un manque.
    Ne marque jamais « conforme » sans preuve. Ne lis aucun secret ni aucune donnée personnelle réelle pour prouver
    quoi que ce soit : la forme suffit (schéma, test, configuration).
 3. Écris `socle-conformite.md` à la racine du projet :

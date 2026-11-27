@@ -22,6 +22,11 @@ description: Prépare une mise en production d'un logiciel d'AEF Solutions — r
    `curl -sSI -H "Accept-Encoding: br, gzip"` d'une page et d'un fichier statique — `Content-Encoding` (PERF-18),
    `Cache-Control` (PERF-30) et la mise en cache par le CDN (PERF-16). Compare les chiffres à ceux de la mise en
    production précédente : une page qui s'est alourdie est une régression à expliquer (PERF-13).
+   Relève aussi la santé de la base et du serveur (fiche 06 §12), en ne lisant que des chiffres : `pg_stat_statements`
+   (requêtes les plus fréquentes et les plus coûteuses), `pg_stat_user_tables` (tables lues en entier, lignes mortes)
+   et la taille des tables (PERF-38) ; la source de l'application dans Coolify, qui doit être une image bâtie par la
+   chaîne d'intégration (PERF-39) ; la sonde de marge du serveur et son alerte d'essai reçue (PERF-40). Une table qui
+   grandit sans purge planifiée (PERF-35) bloque autant qu'une requête sans index.
 2. Recopie la grille dans `docs/mise-en-production-AAAA-MM-JJ.md` et remplis chaque case avec sa preuve : lien vers la
    PR et l'exécution d'intégration continue verte, fichier, test, capture, date du dernier exercice de restauration,
    ligne du registre des traitements, relevé de performance. Une case sans preuve reste vide.
