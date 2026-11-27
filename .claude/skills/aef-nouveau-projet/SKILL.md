@@ -42,7 +42,12 @@ Mettre en place, en s'inspirant du CRM (logiciel de référence, cité dans chaq
   rien de préchargé qui ne soit à l'écran (PERF-32) ; les images en WebP ou AVIF, chargées quand on y arrive
   (PERF-14, PERF-22) ; les scripts tiers après la page (PERF-25) ; le pool de connexions (PERF-28) ; et surtout
   **la mesure sur téléphone lent avec son budget de poids** (PERF-33), posée tant que l'application est petite —
-  c'est elle qui empêchera l'embonpoint, pas la bonne volonté ;
+  c'est elle qui empêchera l'embonpoint, pas la bonne volonté. Et ce qui ralentit un logiciel au bout de six mois
+  (fiche 06 §12) : chaque traitement qui recalcule n'écrit que les différences, avec le test « deux passages, zéro
+  écriture au second » (PERF-34) ; chaque table de journal ou d'historique naît avec sa durée de conservation et sa
+  purge planifiée (PERF-35) ; le menu et ses compteurs lus dans un cache court par établissement, `staleTimes` réglé
+  (PERF-36) ; une seule actualisation par action (PERF-37) ; le build dans la chaîne d'intégration, pas sur le
+  serveur (PERF-39) ;
 - chaque **pratique en vigueur** de `11-outillage-assistants.md` §3 (P1, P2…), et le rappel de veille au démarrage des
   sessions (posé par l'installateur du socle). Les nouveautés « à évaluer » ne sont pas appliquées d'office ;
 - le **classement des données** et la cartographie de départ (`docs/cartographie-donnees.md`), des environnements

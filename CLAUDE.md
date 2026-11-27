@@ -13,7 +13,8 @@ cite son identifiant (`09-exigences.csv`). Ce que tout assistant applique ici, �
 
 - **Données** (fiche 13) : chaque donnée a une classe (publique, interne, personnelle, sensible, secrète). Jamais de
   donnée personnelle réelle ni de secret dans une demande, un journal, un courriel d'alerte, un test ou un workflow.
-  Pour diagnostiquer : compter, pas afficher. Écrire en production = script relu, sauvegarde avant, validation humaine.
+  Pour diagnostiquer : compter, pas afficher. Écrire en production = script relu, sauvegarde avant des seules tables
+  touchées (jamais un dump complet de la production en journée, PERF-41), validation humaine.
 - **Contrôles et alertes** (fiche 12) : tout ce qui tourne seul (tâche planifiée, workflow n8n, import, sauvegarde)
   prévient quand il échoue **et** quand il se tait. Les alertes partent de `noreply@mail.aef-solutions.fr` vers la
   boîte d'exploitation, sans donnée personnelle. Une alerte jamais reçue en essai ne compte pas.
@@ -24,7 +25,9 @@ cite son identifiant (`09-exigences.csv`). Ce que tout assistant applique ici, �
   squelette (PERF-09) ; chaque requête est indexée, paginée, en colonnes utiles, jamais dans une boucle (PERF-06) ;
   chaque appel sortant a un délai maximum (PERF-20) ; ce qui est long part en arrière-plan (PERF-17). Ce qu'on
   ajoute au navigateur se pèse avant (PERF-19), et se mesure sur téléphone lent, sur une application bâtie
-  (PERF-33). Une configuration ne prouve rien : la preuve est ce que le serveur répond.
+  (PERF-33). Dans la durée (fiche 6 §12) : on n'écrit que ce qui a changé (PERF-34) ; toute table qui grandit a sa
+  purge dès sa création (PERF-35) ; le menu et ses compteurs viennent d'un cache court par établissement (PERF-36) ;
+  un geste, un rechargement (PERF-37). Une configuration ne prouve rien : la preuve est ce que le serveur répond.
 - **Production** : aucune mise en production sans `/aef-avant-production`. L'assistant ne pousse pas sur la branche
   principale, n'écrit pas en base de production, ne publie ni n'active un workflow, ne crée ni ne change un secret
   sans validation humaine (IA-04).

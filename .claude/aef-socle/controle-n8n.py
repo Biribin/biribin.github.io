@@ -1,4 +1,4 @@
-"""Contrôle d'une instance n8n d'AEF, en lecture seule (fiche 12 du socle : CTL-08 à CTL-16, DON-06).
+"""Contrôle d'une instance n8n d'AEF, en lecture seule (fiche 12 du socle : CTL-08 à CTL-19, DON-06).
 
     python controle-n8n.py                                   rapport à l'écran (instance lue par son API)
     python controle-n8n.py --courriel                        rapport envoyé par courriel, même vide (CTL-16)
@@ -167,6 +167,95 @@ def catchs_qui_avalent(code):
         corps = re.sub(r"//[^\n]*|/\*.*?\*/", "", code[m.end(): i - 1], flags=re.S).strip()
         if not corps or re.fullmatch(r"return\s*(\[\s*\]|null|undefined|\{\s*\}|false)?\s*;?", corps):
             trouves += 1
+    return trouves
+
+
+# --- ce qu'une montée en n8n 3.0 casserait (CTL-19) --------------------------------------------------------------
+
+# Nœuds retirés par n8n 3.0 (changements de rupture publiés le 27/10/2026, version stable annoncée pour décembre).
+# Un workflow qui en contient échoue dès qu'il tourne ; s'il était publié, il ne se réactive pas au démarrage de n8n.
+# Personne ne proteste : le workflow se tait, simplement. D'où un contrôle avant la montée, et pas après.
+RETIRES_3 = {
+    "n8n-nodes-base.function": "Function : passer au nœud Code, mode Run Once for All Items",
+    "n8n-nodes-base.functionItem": "Function Item : passer au nœud Code, mode Run Once for Each Item",
+    "n8n-nodes-base.cron": "Cron : passer au Schedule Trigger",
+    "n8n-nodes-base.interval": "Interval : passer au Schedule Trigger",
+    "n8n-nodes-base.itemLists": "Item Lists : passer au nœud de l'opération utilisée (Split Out, Aggregate, Sort, Limit, Remove Duplicates, Summarize)",
+    "n8n-nodes-base.htmlExtract": "HTML Extract : passer au nœud HTML, opération Extract HTML Content",
+    "n8n-nodes-base.iCal": "iCalendar : passer à Convert to File, opération Convert to ICS",
+    "n8n-nodes-base.moveBinaryData": "Convert to/from binary data : passer à Convert to File ou Extract from File",
+    "n8n-nodes-base.readBinaryFile": "Read Binary File : passer à Read/Write Files from Disk",
+    "n8n-nodes-base.readBinaryFiles": "Read Binary Files : passer à Read/Write Files from Disk",
+    "n8n-nodes-base.writeBinaryFile": "Write Binary File : passer à Read/Write Files from Disk",
+    "n8n-nodes-base.readPDF": "Read PDF : passer à Extract from File, opération Extract From PDF",
+    "n8n-nodes-base.workflowTrigger": "Workflow Trigger : passer au n8n Trigger",
+    "n8n-nodes-base.aiTransform": "AI Transform : le convertir en nœud Code depuis le rapport de migration de n8n, qui garde le code produit",
+    "n8n-nodes-base.openAi": "OpenAI (ancien) : passer au nœud OpenAI de la section AI",
+    "n8n-nodes-base.orbit": "Orbit : sans remplacement, le service a fermé",
+    "@n8n/n8n-nodes-langchain.code": "LangChain Code : sans remplacement direct",
+    "@n8n/n8n-nodes-langchain.manualChatTrigger": "Manual Chat Trigger : passer au Chat Trigger",
+    "@n8n/n8n-nodes-langchain.memoryChatRetriever": "Chat Messages Retriever : passer au Chat Memory Manager",
+    "@n8n/n8n-nodes-langchain.memoryMotorhead": "mémoire Motorhead : sans remplacement, prendre une autre mémoire",
+    "@n8n/n8n-nodes-langchain.memoryZep": "mémoire Zep : sans remplacement, prendre une autre mémoire",
+    "@n8n/n8n-nodes-langchain.openAiAssistant": "OpenAI Assistant : passer au nœud OpenAI, ressource Assistant",
+    "@n8n/n8n-nodes-langchain.lmOpenAi": "OpenAI Model : passer à OpenAI Chat Model",
+    "@n8n/n8n-nodes-langchain.documentBinaryInputLoader": "Binary Input Loader : passer au Default Data Loader",
+    "@n8n/n8n-nodes-langchain.documentJsonInputLoader": "JSON Input Loader : passer au Default Data Loader",
+    "@n8n/n8n-nodes-langchain.documentGithubLoader": "GitHub Document Loader : passer au Default Data Loader, le contenu étant lu par le nœud GitHub",
+    "@n8n/n8n-nodes-langchain.toolSerpApi": "SerpApi : passer à un HTTP Request branché en outil",
+}
+
+# Nœuds qui restent, mais dont ces versions-là disparaissent ; la version se lit dans typeVersion.
+# ALERTE quand le nœud échouera, INFO quand il changera seulement de comportement.
+VERSIONS_RETIREES_3 = {
+    "@n8n/n8n-nodes-langchain.agent": (1.0, ALERTE, "AI Agent v1 : ses modes (SQL, Conversational, ReAct) disparaissent, passer en Tools Agent"),
+    "n8n-nodes-base.editImage": (1.1, ALERTE, "Edit Image v1 et v1.1 : passer en v2, qui change le rendu (flou, texte, qualité PNG)"),
+    "n8n-nodes-base.executeWorkflow": (1.1, ALERTE, "Execute Sub-workflow v1.1 et avant : les sources Local File et URL disparaissent"),
+    "n8n-nodes-base.gmailTrigger": (1.3, INFO, "Gmail Trigger avant 1.4 : tournera comme une 1.4, qui exclut les brouillons et plafonne chaque relève"),
+}
+
+PLUSIEURS_SORTIES_3 = {"n8n-nodes-base.if", "n8n-nodes-base.switch"}
+# $getPairedItem disparaît partout ; $evaluateExpression seulement du nœud Code, où il reste bon dans un champ {{ }}.
+PARTOUT_3 = {"$getPairedItem": "passer par $('<nœud>').item, .itemMatching() ou .pairedItem()"}
+DANS_LE_CODE_3 = {"$evaluateExpression": "calculer la valeur dans un nœud Set en amont, et la lire dans l'élément"}
+
+
+def version_de(noeud):
+    try:
+        return float(noeud.get("typeVersion") or 1)
+    except (TypeError, ValueError):
+        return 1.0
+
+
+def ecarts_montee_n8n(noeuds, actif):
+    """Ce qu'une montée en n8n 3.0 casserait dans ce workflow : (gravité, message) par nœud.
+
+    Un workflow arrêté ne casse rien tant qu'il dort : son écart descend en INFO.
+    """
+    trouves = []
+
+    def peser(voulue):
+        return voulue if actif else INFO
+
+    for n in noeuds:
+        type_, nom = n.get("type"), n.get("name")
+        if type_ in RETIRES_3:
+            trouves.append((peser(ALERTE), f"nœud « {nom} » retiré par n8n 3.0 — {RETIRES_3[type_]}"))
+        retiree = VERSIONS_RETIREES_3.get(type_)
+        if retiree and version_de(n) <= retiree[0]:
+            trouves.append((peser(retiree[1]), f"nœud « {nom} » en version {version_de(n):g} — {retiree[2]}"))
+        texte = json.dumps(n.get("parameters") or {}, ensure_ascii=False, default=str)
+        for helper, quoi_faire in PARTOUT_3.items():
+            if helper in texte:
+                trouves.append((peser(ALERTE), f"nœud « {nom} » appelle {helper}, retiré par n8n 3.0 — {quoi_faire}"))
+        if type_ in CODE:
+            for helper, quoi_faire in DANS_LE_CODE_3.items():
+                if helper in code_du_noeud(n):
+                    trouves.append((peser(ALERTE), f"nœud Code « {nom} » appelle {helper}, retiré du nœud Code par "
+                                                   f"n8n 3.0 — {quoi_faire}"))
+        if type_ in PLUSIEURS_SORTIES_3 and n.get("alwaysOutputData"):
+            trouves.append((INFO, f"nœud « {nom} » : Always Output Data sur un nœud à plusieurs sorties — n8n 3.0 "
+                                  "n'ajoute plus un élément vide par sortie vide, mais seulement quand toutes le sont"))
     return trouves
 
 
@@ -424,6 +513,10 @@ def analyser(workflows, erreurs_24h=None, dernieres=None, inventaire=None, maint
         # CTL-14 : brouillon différent de la version publiée
         if wf.get("activeVersionId") and wf.get("versionId") and wf["activeVersionId"] != wf["versionId"]:
             ecarts.append(ecart(INFO, "CTL-14", nom, "brouillon différent de la version publiée : le contrôle lit le brouillon"))
+
+        # CTL-19 : ce qu'une montée en n8n 3.0 casserait
+        for gravite, message in ecarts_montee_n8n(noeuds, actif):
+            ecarts.append(ecart(gravite, "CTL-19", nom, message))
 
         # exécutions en erreur sur 24 h
         if erreurs_24h is not None and erreurs_24h.get(wf.get("id")):
